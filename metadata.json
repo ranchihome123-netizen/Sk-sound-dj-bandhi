@@ -1,0 +1,8 @@
+{
+  "name": "Remix SK Sound DJ Bandi - Sikandar Pandit",
+  "description": "Sk sound dj bandhi |owner name sikandra kumar pandit ||\nAddress: bandhi jharkhand dham road khorimahua rajdha war giridih jharkhand ",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
