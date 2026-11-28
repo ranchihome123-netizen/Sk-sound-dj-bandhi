@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
-import { X, Printer, Share2, MapPin, Shield, Camera, Palette } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, Printer, Share2, MapPin, Shield, Camera, Palette, Download, Check } from 'lucide-react';
 import { DJLogo } from './DJLogo';
 import { Booking, BusinessConfig } from '../types';
 import { getBookingRewardEarned } from '../utils/rewardUtils';
+import { downloadBookingSlipPng } from '../utils/slipDownload';
+import {
+  getProcessedSignatureDataUrl,
+  OWNER_SIGNATURE_SRC
+} from '../utils/signatureProcessor';
 
 interface BookingSlipModalProps {
   booking: Booking | null;
@@ -20,11 +25,55 @@ export const BookingSlipModal: React.FC<BookingSlipModalProps> = ({
   rewardPercent = 5
 }) => {
   const [slipTheme, setSlipTheme] = useState<SlipBackgroundTheme>('royal_gold');
+  const [downloading, setDownloading] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
+  const [signatureSrc, setSignatureSrc] = useState<string | null>(null);
+
+  const isDarkSlipTheme = slipTheme === 'midnight_dark';
+
+  useEffect(() => {
+    let active = true;
+    getProcessedSignatureDataUrl(isDarkSlipTheme ? 'dark' : 'light').then((url) => {
+      if (active && url) {
+        setSignatureSrc(url);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [isDarkSlipTheme]);
 
   if (!booking) return null;
 
   const handlePrint = () => {
+    document.body.classList.add('printing-slip');
+    const cleanup = () => {
+      document.body.classList.remove('printing-slip');
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
     window.print();
+    setTimeout(cleanup, 1500);
+  };
+
+  const handleDownloadSlip = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await downloadBookingSlipPng({
+        booking,
+        business,
+        rewardPercent,
+        slipTheme
+      });
+      setDownloaded(true);
+      setTimeout(() => setDownloaded(false), 2200);
+    } catch {
+      // Fallback to browser print-to-PDF if canvas export fails
+      handlePrint();
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const getEventLabel = (b: Booking) => {
@@ -110,14 +159,20 @@ ${booking.discountCode && (booking.discountAmount || 0) > 0 ? `*Subtotal:* ₹${
   const bodyTextClass = isDarkSlip ? 'text-slate-300' : 'text-neutral-700';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl overflow-hidden my-6">
+    <div
+      data-slip-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm overflow-y-auto"
+    >
+      <div
+        data-slip-modal-card="true"
+        className="relative w-full max-w-2xl bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl overflow-hidden my-6"
+      >
         
         {/* Top Action Bar (no-print) */}
         <div className="no-print px-4 sm:px-5 py-3 bg-neutral-950 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-amber-400">
-              Official Digital Booking Receipt Slip
+              Official Booking Slip
             </span>
 
             {/* Slip Background Theme Switcher */}
@@ -144,13 +199,32 @@ ${booking.discountCode && (booking.discountAmount || 0) > 0 ? `*Subtotal:* ₹${
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
+              type="button"
+              onClick={handleDownloadSlip}
+              disabled={downloading}
+              className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60"
+            >
+              {downloaded ? (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Saved</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{downloading ? 'Saving...' : 'Download'}</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
               onClick={handlePrint}
               className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print Slip</span>
+              <span>Print</span>
             </button>
             <a
               href={buildSlipWhatsAppUrl()}
@@ -159,11 +233,13 @@ ${booking.discountCode && (booking.discountAmount || 0) > 0 ? `*Subtotal:* ₹${
               className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span>Share on WhatsApp</span>
+              <span>WhatsApp</span>
             </a>
             <button
+              type="button"
               onClick={onClose}
               className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 cursor-pointer"
+              aria-label="Close Slip"
             >
               <X className="w-5 h-5" />
             </button>
@@ -446,7 +522,19 @@ ${booking.discountCode && (booking.discountAmount || 0) > 0 ? `*Subtotal:* ₹${
               </div>
 
               <div className="text-right">
-                <div className={`h-8 border-b border-dashed w-32 ml-auto ${isDarkSlip ? 'border-slate-500' : 'border-amber-800/50'}`} />
+                <div className={`h-14 w-36 ml-auto flex items-end justify-end pb-1 border-b border-dashed ${isDarkSlip ? 'border-slate-500' : 'border-amber-800/50'}`}>
+                  <img
+                    src={signatureSrc || OWNER_SIGNATURE_SRC}
+                    alt="Owner Signature - Sikandra Kumar Pandit"
+                    className={`max-h-13 max-w-full object-contain select-none ${
+                      signatureSrc
+                        ? ''
+                        : isDarkSlip
+                        ? 'mix-blend-screen brightness-125'
+                        : 'invert hue-rotate-180 mix-blend-multiply'
+                    }`}
+                  />
+                </div>
                 <div className={`text-[10px] font-bold mt-1 ${headingStrongClass}`}>
                   Sikandra Kumar Pandit (Authorized)
                 </div>

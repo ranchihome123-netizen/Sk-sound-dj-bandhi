@@ -789,13 +789,7 @@ export default function App() {
   };
 
   return (
-    <div
-      className={
-        authSession.role === 'customer'
-          ? 'min-h-screen bg-[#f4f2ec] text-slate-900 font-sans selection:bg-amber-400 selection:text-black'
-          : 'min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-amber-400 selection:text-black'
-      }
-    >
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-amber-400 selection:text-black">
       
       {/* Navigation Top Bar */}
       <Navbar
@@ -812,10 +806,11 @@ export default function App() {
         notifications={bellNotifications}
         onMarkNotificationRead={handleMarkNotificationRead}
         onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
+        theme="dark"
       />
 
       <main>
-        {/* CUSTOMER PORTAL (Separated Tabbed Workspace + Light Alabaster & Royal Midnight Theme) */}
+        {/* CUSTOMER PORTAL (Original Dark Obsidian & Amber Gold DJ Theme) */}
         {authSession.role === 'customer' && loggedInCustomer ? (
           <div>
             {/* 1. Customer Hero Account, Workspace Tabs, Active Coupon Discounts & Overview */}
@@ -850,7 +845,7 @@ export default function App() {
                 }
                 onOpenUPIWithAmount={(amount, note) => handleOpenUPI(amount, note)}
                 lang={lang}
-                theme="light"
+                theme="dark"
               />
             )}
 
@@ -892,7 +887,7 @@ export default function App() {
                 business={business}
                 onOpenUPI={() => handleOpenUPI(2000, 'SK Sound DJ Bandhi Advance')}
                 lang={lang}
-                theme="light"
+                theme="dark"
               />
             )}
           </div>
@@ -974,6 +969,7 @@ export default function App() {
         business={business}
         onOpenUPI={() => handleOpenUPI(2000, 'SK Sound DJ Bandhi Payment')}
         lang={lang}
+        theme="dark"
       />
 
       {/* Dynamic UPI Scanner Modal (UPI ID is shown ONLY here on Payment click) */}

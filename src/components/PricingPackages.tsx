@@ -38,18 +38,18 @@ export const PricingPackages: React.FC<PricingPackagesProps> = ({
   return (
     <section
       id="packages"
-      className={isLight ? 'py-8 bg-[#f4f2ec] text-slate-900' : 'py-10 bg-neutral-900/40 border-b border-neutral-800'}
+      className={isLight ? 'py-8 bg-[#eef3f7] text-slate-900' : 'py-10 bg-neutral-900/40 border-b border-neutral-800'}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
         
         {/* Compact Catalog Header + Category Tabs */}
         <div
           className={`flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b ${
-            isLight ? 'border-stone-300/80' : 'border-neutral-800'
+            isLight ? 'border-slate-200' : 'border-neutral-800'
           }`}
         >
           <div>
-            <p className={`text-xs font-bold ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
+            <p className={`text-xs font-bold ${isLight ? 'text-teal-700' : 'text-amber-400'}`}>
               SK Sound DJ Bandhi · Rate Catalog
             </p>
             <h2 className={`text-xl sm:text-2xl font-extrabold tracking-tight mt-0.5 ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -63,7 +63,7 @@ export const PricingPackages: React.FC<PricingPackagesProps> = ({
           {/* Segmented Category Filter */}
           <div
             className={`flex items-center gap-1 p-1 rounded-xl border w-fit shrink-0 ${
-              isLight ? 'bg-white border-stone-200 shadow-sm' : 'bg-neutral-900 border-neutral-800'
+              isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-neutral-900 border-neutral-800'
             }`}
           >
             <button
@@ -119,7 +119,7 @@ export const PricingPackages: React.FC<PricingPackagesProps> = ({
                 key={plan.id}
                 className={`group rounded-2xl border transition-all duration-150 hover:-translate-y-0.5 flex flex-col justify-between overflow-hidden ${
                   isLight
-                    ? 'border-stone-200 bg-white hover:border-amber-500 shadow-sm'
+                    ? 'border-slate-200 bg-white hover:border-teal-500 shadow-sm'
                     : 'border-neutral-800 bg-neutral-900 hover:border-amber-500/50'
                 }`}
               >
@@ -129,10 +129,10 @@ export const PricingPackages: React.FC<PricingPackagesProps> = ({
                   onClick={() => setSelectedProduct(plan)}
                   className="text-left focus-visible:outline-none cursor-pointer flex-1 flex flex-col"
                 >
-                  {/* Compact 4:3 Product Image */}
+                  {/* Compact Smaller Product Image */}
                   <div
-                    className={`aspect-[4/3] w-full relative overflow-hidden border-b ${
-                      isLight ? 'bg-stone-100 border-stone-200' : 'bg-neutral-950 border-neutral-800/80'
+                    className={`h-24 sm:h-28 w-full relative overflow-hidden border-b ${
+                      isLight ? 'bg-slate-100 border-slate-200' : 'bg-neutral-950 border-neutral-800/80'
                     }`}
                   >
                     {imgSrc ? (
@@ -147,23 +147,23 @@ export const PricingPackages: React.FC<PricingPackagesProps> = ({
                       />
                     ) : (
                       <div
-                        className={`w-full h-full flex flex-col items-center justify-center p-3 text-center ${
-                          isLight ? 'bg-stone-100' : 'bg-gradient-to-br from-neutral-900 to-neutral-950'
+                        className={`w-full h-full flex flex-col items-center justify-center p-2.5 text-center ${
+                          isLight ? 'bg-slate-100' : 'bg-gradient-to-br from-neutral-900 to-neutral-950'
                         }`}
                       >
                         {plan.category === 'event' ? (
-                          <Calendar className="w-7 h-7 text-amber-500 mb-1" />
+                          <Calendar className="w-6 h-6 text-amber-400 mb-1" />
                         ) : (
-                          <Music2 className="w-7 h-7 text-amber-500 mb-1" />
+                          <Music2 className="w-6 h-6 text-amber-400 mb-1" />
                         )}
-                        <span className={`text-[11px] font-semibold line-clamp-1 ${isLight ? 'text-slate-600' : 'text-neutral-300'}`}>
+                        <span className={`text-[10px] font-semibold line-clamp-1 ${isLight ? 'text-slate-600' : 'text-neutral-300'}`}>
                           {plan.unitLabel || 'DJ Item'}
                         </span>
                       </div>
                     )}
 
                     {plan.popular && (
-                      <span className="absolute top-2 left-2 bg-[#0f172a] text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-md shadow">
+                      <span className="absolute top-1.5 left-1.5 bg-amber-400 text-slate-950 text-[9px] font-extrabold px-1.5 py-0.5 rounded shadow uppercase">
                         Popular
                       </span>
                     )}
@@ -183,12 +183,12 @@ export const PricingPackages: React.FC<PricingPackagesProps> = ({
                 {/* Bottom Price + Add/Book Bar */}
                 <div
                   className={`px-2.5 pb-2.5 pt-2 border-t flex items-center justify-between gap-1.5 ${
-                    isLight ? 'border-stone-100' : 'border-neutral-800/80'
+                    isLight ? 'border-slate-100' : 'border-neutral-800/80'
                   }`}
                 >
                   <div className="min-w-0">
                     {isQuoted ? (
-                      <span className={`text-[11px] font-bold block truncate ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
+                      <span className={`text-[11px] font-bold block truncate ${isLight ? 'text-teal-700' : 'text-emerald-400'}`}>
                         Owner Rate
                       </span>
                     ) : (
@@ -214,11 +214,11 @@ export const PricingPackages: React.FC<PricingPackagesProps> = ({
         {/* Slim Handwritten Paper Slip Callout Strip */}
         <div
           className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-            isLight ? 'bg-white border-stone-200 shadow-sm' : 'bg-neutral-900 border-neutral-800'
+            isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-neutral-900 border-neutral-800'
           }`}
         >
           <div className="flex items-center gap-2.5">
-            <Camera className={`w-4 h-4 shrink-0 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+            <Camera className={`w-4 h-4 shrink-0 ${isLight ? 'text-teal-700' : 'text-amber-400'}`} />
             <p className={`text-xs ${isLight ? 'text-slate-700' : 'text-neutral-300'}`}>
               <strong className={isLight ? 'text-slate-900' : 'text-white'}>कॉपी पर्ची फोटो अपलोड:</strong> अपने लिखे सामान की पर्ची भेजें — मूल्य मालिक सिकंदर पंडित तय करेंगे।
             </p>

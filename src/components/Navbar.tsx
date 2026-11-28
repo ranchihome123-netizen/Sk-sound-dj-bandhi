@@ -33,6 +33,7 @@ interface NavbarProps {
   notifications?: CustomerNotification[];
   onMarkNotificationRead?: (id: string) => void;
   onMarkAllNotificationsRead?: () => void;
+  theme?: 'light' | 'dark';
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -45,8 +46,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveSection,
   notifications = [],
   onMarkNotificationRead,
-  onMarkAllNotificationsRead
+  onMarkAllNotificationsRead,
+  theme = 'dark'
 }) => {
+  const isLight = theme === 'light';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifFilter, setNotifFilter] = useState<'all' | 'offer_broadcast' | 'booking_success' | 'booking_cancelled'>('all');
@@ -115,7 +118,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-neutral-950/95 backdrop-blur-md border-b border-neutral-800">
+    <header
+      className={
+        isLight
+          ? 'sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 text-slate-900 shadow-xs'
+          : 'sticky top-0 z-40 bg-neutral-950/95 backdrop-blur-md border-b border-neutral-800'
+      }
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4 sm:gap-6">
         
         {/* Zone 1: Brand Wordmark with Owner Photo */}
@@ -126,18 +135,24 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <DJLogo size={38} />
             <div className="flex flex-col">
-              <span className="text-base sm:text-lg font-bold tracking-tight text-white group-hover:text-amber-400 transition-colors whitespace-nowrap">
+              <span
+                className={`text-base sm:text-lg font-bold tracking-tight transition-colors whitespace-nowrap ${
+                  isLight
+                    ? 'text-[#083335] group-hover:text-teal-700'
+                    : 'text-white group-hover:text-amber-400'
+                }`}
+              >
                 {business?.businessNameEn || 'SK Sound DJ Bandhi'}
               </span>
-              <span className="text-[10px] text-neutral-400 hidden sm:inline whitespace-nowrap">
+              <span className={`text-[10px] hidden sm:inline whitespace-nowrap ${isLight ? 'text-slate-500' : 'text-neutral-400'}`}>
                 Bandhi, Khorimahuwa, Rajdhanwar
               </span>
             </div>
           </button>
 
           {/* Owner Photo in Navbar Header */}
-          <div className="hidden sm:flex items-center gap-2 pl-2.5 border-l border-neutral-800">
-            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-amber-400 shrink-0 shadow bg-neutral-900">
+          <div className={`hidden sm:flex items-center gap-2 pl-2.5 border-l ${isLight ? 'border-slate-200' : 'border-neutral-800'}`}>
+            <div className={`w-8 h-8 rounded-full overflow-hidden border-2 shrink-0 shadow ${isLight ? 'border-teal-600 bg-slate-100' : 'border-amber-400 bg-neutral-900'}`}>
               <img
                 src={business?.ownerPhoto?.includes('/public/') ? '/owner_sikandar_pandit.jpg' : (business?.ownerPhoto || '/owner_sikandar_pandit.jpg')}
                 alt="Sikandra Kumar Pandit"
@@ -148,23 +163,31 @@ export const Navbar: React.FC<NavbarProps> = ({
               />
             </div>
             <div className="flex flex-col text-[11px] leading-tight">
-              <span className="text-white font-bold flex items-center gap-1">
+              <span className={`font-bold flex items-center gap-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 <span>सिकंदर पंडित</span>
-                <span className="text-[9px] bg-amber-400/20 text-amber-300 px-1 py-0.2 rounded font-mono">मालिक</span>
+                <span className={`text-[9px] px-1 py-0.2 rounded font-mono ${isLight ? 'bg-teal-50 text-teal-800 border border-teal-200' : 'bg-amber-400/20 text-amber-300'}`}>
+                  मालिक
+                </span>
               </span>
-              <span className="text-[10px] text-emerald-400 font-mono">+91 9973492726</span>
+              <span className={`text-[10px] font-mono ${isLight ? 'text-emerald-700 font-semibold' : 'text-emerald-400'}`}>+91 9973492726</span>
             </div>
           </div>
         </div>
 
         {/* Zone 2: Single-line Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-6 text-xs sm:text-sm font-medium text-neutral-300">
+        <nav className={`hidden lg:flex items-center gap-6 text-xs sm:text-sm font-medium ${isLight ? 'text-slate-600' : 'text-neutral-300'}`}>
           {navLinks.map((item) => (
             <button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
-              className={`hover:text-amber-400 transition-colors whitespace-nowrap cursor-pointer py-1 ${
-                activeSection === item.id ? 'text-amber-400 font-semibold border-b-2 border-amber-400' : ''
+              className={`transition-colors whitespace-nowrap cursor-pointer py-1 ${
+                activeSection === item.id
+                  ? isLight
+                    ? 'text-[#083335] font-bold border-b-2 border-teal-600'
+                    : 'text-amber-400 font-semibold border-b-2 border-amber-400'
+                  : isLight
+                  ? 'hover:text-teal-700'
+                  : 'hover:text-amber-400'
               }`}
             >
               {item.label}
@@ -188,12 +211,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className={`relative p-2 rounded-xl border transition-colors cursor-pointer ${
                   notifOpen
                     ? 'bg-amber-400 text-slate-950 border-amber-400'
+                    : isLight
+                    ? 'bg-slate-100 hover:bg-slate-200 text-[#083335] border-slate-200'
                     : 'bg-neutral-900 hover:bg-neutral-800 text-amber-300 border-neutral-700'
                 }`}
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold font-mono flex items-center justify-center shadow ring-2 ring-neutral-950">
+                  <span
+                    className={`absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold font-mono flex items-center justify-center shadow ring-2 ${
+                      isLight ? 'ring-white' : 'ring-neutral-950'
+                    }`}
+                  >
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -357,29 +386,37 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* User Auth state / Login button */}
           {authSession ? (
             <div className="flex items-center gap-1.5">
-              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 border border-neutral-700 text-xs">
+              <div
+                className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs ${
+                  isLight ? 'bg-slate-100 border-slate-200' : 'bg-neutral-900 border-neutral-700'
+                }`}
+              >
                 {authSession.role === 'owner' ? (
                   <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
                 ) : authSession.user.photoUrl ? (
                   <img
                     src={authSession.user.photoUrl}
                     alt={authSession.user.name}
-                    className="w-5 h-5 rounded-full object-cover border border-amber-400"
+                    className={`w-5 h-5 rounded-full object-cover border ${isLight ? 'border-teal-600' : 'border-amber-400'}`}
                   />
                 ) : (
-                  <User className="w-3.5 h-3.5 text-emerald-400" />
+                  <User className={`w-3.5 h-3.5 ${isLight ? 'text-teal-700' : 'text-emerald-400'}`} />
                 )}
-                <span className="font-semibold text-white max-w-[120px] truncate">
+                <span className={`font-semibold max-w-[120px] truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {authSession.user.name.split(' ')[0]}
                 </span>
-                <span className="text-[10px] text-amber-400 uppercase">
+                <span className={`text-[10px] uppercase font-bold ${isLight ? 'text-teal-700' : 'text-amber-400'}`}>
                   ({authSession.role === 'owner' ? 'Owner' : 'Customer'})
                 </span>
               </div>
 
               <button
                 onClick={onLogout}
-                className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700 transition-colors cursor-pointer"
+                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                  isLight
+                    ? 'bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 border-slate-200'
+                    : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border-neutral-700'
+                }`}
                 title="Sign Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -399,7 +436,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {authSession?.role !== 'owner' && (
             <button
               onClick={onOpenBooking}
-              className="px-3.5 py-2 text-xs font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-lg shadow-sm shadow-amber-500/20 transition-all cursor-pointer whitespace-nowrap hidden sm:inline-flex items-center gap-1.5"
+              className="px-3.5 py-2 text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-lg shadow-sm shadow-amber-500/20 transition-all cursor-pointer whitespace-nowrap hidden sm:inline-flex items-center gap-1.5"
             >
               <CalendarCheck className="w-3.5 h-3.5" />
               <span>Book DJ</span>
@@ -409,7 +446,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Mobile hamburger menu toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-neutral-300 hover:text-white rounded-lg focus:outline-none"
+            className={`lg:hidden p-2 rounded-lg focus:outline-none ${isLight ? 'text-slate-700 hover:text-slate-950' : 'text-neutral-300 hover:text-white'}`}
             aria-label="Toggle Menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -419,32 +456,44 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-neutral-900/98 border-b border-neutral-800 px-4 py-4 space-y-3">
+        <div
+          className={`lg:hidden border-b px-4 py-4 space-y-3 ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-neutral-900/98 border-neutral-800'
+          }`}
+        >
           
           {authSession && (
-            <div className="p-2.5 rounded-lg bg-neutral-950 border border-neutral-800 flex items-center justify-between text-xs">
+            <div
+              className={`p-2.5 rounded-lg border flex items-center justify-between text-xs ${
+                isLight ? 'bg-slate-50 border-slate-200' : 'bg-neutral-950 border-neutral-800'
+              }`}
+            >
               <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-amber-400" />
-                <span className="text-white font-semibold">{authSession.user.name}</span>
-                <span className="text-neutral-400 capitalize">({authSession.role})</span>
+                <User className={`w-4 h-4 ${isLight ? 'text-teal-700' : 'text-amber-400'}`} />
+                <span className={`font-semibold ${isLight ? 'text-slate-900' : 'text-white'}`}>{authSession.user.name}</span>
+                <span className={`capitalize ${isLight ? 'text-slate-500' : 'text-neutral-400'}`}>({authSession.role})</span>
               </div>
               <button
                 onClick={onLogout}
-                className="text-xs text-rose-400 font-semibold hover:underline"
+                className="text-xs text-rose-600 font-semibold hover:underline"
               >
                 Sign Out
               </button>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-2 pb-2 border-b border-neutral-800">
+          <div className={`grid grid-cols-2 gap-2 pb-2 border-b ${isLight ? 'border-slate-200' : 'border-neutral-800'}`}>
             {navLinks.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
                 className={`text-left text-sm py-2 px-3 rounded-md transition-colors ${
                   activeSection === item.id
-                    ? 'bg-amber-500/10 text-amber-400 font-semibold'
+                    ? isLight
+                      ? 'bg-[#0b3b3c] text-amber-300 font-semibold'
+                      : 'bg-amber-500/10 text-amber-400 font-semibold'
+                    : isLight
+                    ? 'text-slate-700 hover:bg-slate-100'
                     : 'text-neutral-300 hover:bg-neutral-800'
                 }`}
               >
@@ -482,7 +531,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <a
               href="tel:9973492726"
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white font-medium text-sm"
+              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium text-sm ${
+                isLight
+                  ? 'bg-[#0b3b3c] hover:bg-teal-900 text-white'
+                  : 'bg-neutral-800 hover:bg-neutral-700 text-white'
+              }`}
             >
               <Phone className="w-4 h-4 text-emerald-400" />
               Call Sikandra Kumar Pandit (+91 9973492726)

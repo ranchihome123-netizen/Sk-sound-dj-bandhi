@@ -22,7 +22,7 @@ export const LocationContact: React.FC<LocationContactProps> = ({
       id="location"
       className={
         isLight
-          ? 'py-10 bg-[#f4f2ec] text-slate-900'
+          ? 'py-10 bg-[#eef3f7] text-slate-900'
           : 'py-14 bg-neutral-950 border-b border-neutral-800'
       }
     >
@@ -30,7 +30,7 @@ export const LocationContact: React.FC<LocationContactProps> = ({
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-8">
-          <div className={`text-xs font-bold mb-1.5 flex items-center justify-center gap-1.5 ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
+          <div className={`text-xs font-bold mb-1.5 flex items-center justify-center gap-1.5 ${isLight ? 'text-teal-700' : 'text-amber-400'}`}>
             <MapPin className="w-3.5 h-3.5" />
             <span>Location & Headquarters</span>
           </div>
@@ -51,10 +51,10 @@ export const LocationContact: React.FC<LocationContactProps> = ({
             {/* Owner & Address Card */}
             <div
               className={`p-6 rounded-3xl border space-y-4 ${
-                isLight ? 'bg-white border-stone-200 shadow-sm' : 'bg-neutral-900 border-neutral-800'
+                isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-neutral-900 border-neutral-800'
               }`}
             >
-              <div className={`flex items-center gap-3 border-b pb-4 ${isLight ? 'border-stone-200' : 'border-neutral-800'}`}>
+              <div className={`flex items-center gap-3 border-b pb-4 ${isLight ? 'border-slate-200' : 'border-neutral-800'}`}>
                 <DJLogo size={48} showText={!isLight} />
                 {isLight && (
                   <div>
@@ -170,7 +170,7 @@ export const LocationContact: React.FC<LocationContactProps> = ({
             {/* Service Area Card */}
             <div
               className={`p-5 rounded-3xl border ${
-                isLight ? 'bg-white border-stone-200 shadow-sm' : 'bg-neutral-900 border-neutral-800'
+                isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-neutral-900 border-neutral-800'
               }`}
             >
               <h4 className={`text-xs font-bold uppercase tracking-wider mb-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
@@ -181,27 +181,27 @@ export const LocationContact: React.FC<LocationContactProps> = ({
               </p>
               <div className={`grid grid-cols-2 gap-2 text-xs ${isLight ? 'text-slate-700' : 'text-neutral-300'}`}>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-teal-700' : 'text-amber-400'}`} />
                   <span>Bandhi, Khorimahuwa</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-teal-700' : 'text-amber-400'}`} />
                   <span>Rajdhanwar Main Market</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-teal-700' : 'text-amber-400'}`} />
                   <span>Khorimahuwa Chowk</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-teal-700' : 'text-amber-400'}`} />
                   <span>Sariya & Bagodar</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-teal-700' : 'text-amber-400'}`} />
                   <span>Jamua & Giridih</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-teal-700' : 'text-amber-400'}`} />
                   <span>Birni & Nearby Areas</span>
                 </div>
               </div>
@@ -213,12 +213,12 @@ export const LocationContact: React.FC<LocationContactProps> = ({
           <div className="lg:col-span-7">
             <div
               className={`rounded-3xl overflow-hidden border p-2.5 shadow-sm ${
-                isLight ? 'bg-white border-stone-200' : 'bg-neutral-900 border-neutral-800 shadow-xl'
+                isLight ? 'bg-white border-slate-200' : 'bg-neutral-900 border-neutral-800 shadow-xl'
               }`}
             >
-              <div className={`p-3 flex items-center justify-between border-b text-xs ${isLight ? 'border-stone-200' : 'border-neutral-800'}`}>
+              <div className={`p-3 flex items-center justify-between border-b text-xs ${isLight ? 'border-slate-200' : 'border-neutral-800'}`}>
                 <div className="flex items-center gap-2">
-                  <Navigation className={`w-4 h-4 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
+                  <Navigation className={`w-4 h-4 ${isLight ? 'text-teal-700' : 'text-amber-400'}`} />
                   <span className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     Live Map: Bandhi, Khorimahuwa, Rajdhanwar (Jharkhand)
                   </span>
@@ -229,7 +229,7 @@ export const LocationContact: React.FC<LocationContactProps> = ({
               </div>
 
               {/* Map Iframe */}
-              <div className={`w-full h-80 sm:h-96 rounded-2xl overflow-hidden relative mt-2 ${isLight ? 'bg-stone-100' : 'bg-neutral-950'}`}>
+              <div className={`w-full h-80 sm:h-96 rounded-2xl overflow-hidden relative mt-2 ${isLight ? 'bg-slate-100' : 'bg-neutral-950'}`}>
                 <iframe
                   title="Rajdhanwar Bandhi Khorimahuwa Location Map"
                   src="https://maps.google.com/maps?q=Rajdhanwar,Giridih,Jharkhand&t=&z=13&ie=UTF8&iwloc=&output=embed"

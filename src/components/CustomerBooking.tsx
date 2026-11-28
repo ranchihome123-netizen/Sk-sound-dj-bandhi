@@ -703,20 +703,20 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
 
   return (
     <>
-      {/* BOOKING MANAGEMENT TAB SECTION (Clean Alabaster Theme) */}
+      {/* BOOKING MANAGEMENT TAB SECTION (Original Dark Obsidian & Gold Theme) */}
       {(showLedger || editSavedBanner || rewardBanner) && (
-        <section id="booking" className="py-6 bg-[#f4f2ec] text-slate-900">
+        <section id="booking" className="py-6 bg-neutral-950 text-neutral-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
 
             {/* Inline Confirmation Banner After Customer Edits a Booking */}
             {editSavedBanner && (
-              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-                <div className="flex items-start gap-2.5 text-xs text-emerald-900">
-                  <CheckCircle className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+              <div className="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                <div className="flex items-start gap-2.5 text-xs text-emerald-200">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-bold text-emerald-950">{editSavedBanner.message}</div>
+                    <div className="font-bold text-white">{editSavedBanner.message}</div>
                     {editSavedBanner.booking.editSummary && (
-                      <div className="text-[11px] text-emerald-800 mt-0.5">
+                      <div className="text-[11px] text-emerald-300 mt-0.5">
                         बदलाव: {editSavedBanner.booking.editSummary}
                       </div>
                     )}
@@ -740,7 +740,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                   <button
                     type="button"
                     onClick={() => setEditSavedBanner(null)}
-                    className="p-1.5 text-emerald-700 hover:text-emerald-950 cursor-pointer"
+                    className="p-1.5 text-emerald-300 hover:text-white cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -750,21 +750,21 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
 
             {/* Booking & Reward Confirmation Banner After New Booking */}
             {rewardBanner && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+              <div className="p-4 sm:p-5 rounded-2xl bg-emerald-950/60 border border-emerald-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                 <div className="flex items-start gap-3 text-xs">
-                  <div className="p-2.5 rounded-xl bg-emerald-600 text-white shrink-0">
+                  <div className="p-2.5 rounded-xl bg-emerald-500 text-black shrink-0">
                     <Gift className="w-5 h-5" />
                   </div>
-                  <div className="text-slate-800 space-y-1">
-                    <div className="font-bold text-sm text-slate-950">
+                  <div className="text-neutral-200 space-y-1">
+                    <div className="font-bold text-sm text-white">
                       बुकिंग {rewardBanner.bookingNumber} सफल हो गई!
                     </div>
                     {rewardBanner.used > 0 && (
-                      <div className="text-emerald-800 font-semibold">
+                      <div className="text-emerald-400 font-semibold">
                         ₹{rewardBanner.used.toLocaleString('en-IN')} रिवॉर्ड ऑफ़ लागू हो गया है
                       </div>
                     )}
-                    <div className="text-[11px] text-slate-600">
+                    <div className="text-[11px] text-neutral-400">
                       {rewardBanner.earned > 0
                         ? `इस बुकिंग पर ${rewardPercent}% रिवॉर्ड = ₹${rewardBanner.earned.toLocaleString('en-IN')} मिला (अगली बुकिंग में ऑफ़ होगा)।`
                         : `मालिक द्वारा रेट तय होते ही ${rewardPercent}% रिवॉर्ड आपके खाते में जुड़ जाएगा।`}
@@ -774,7 +774,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                 <button
                   type="button"
                   onClick={() => setRewardBanner(null)}
-                  className="p-2 text-slate-500 hover:text-slate-900 cursor-pointer self-end sm:self-center"
+                  className="p-2 text-neutral-400 hover:text-white cursor-pointer self-end sm:self-center"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -784,17 +784,17 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
             {showLedger && (
               <>
                 {/* Bookings Header Bar */}
-                <div className="p-5 sm:p-6 rounded-3xl bg-white border border-stone-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                <div className="p-5 sm:p-6 rounded-3xl bg-neutral-900 border border-neutral-800 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg">
                   <div className="space-y-1">
-                    <div className="text-xs font-bold text-amber-700 flex flex-wrap items-center gap-2">
+                    <div className="text-xs font-bold text-amber-400 flex flex-wrap items-center gap-2">
                       <span>Booking History & Management</span>
-                      <span aria-hidden="true" className="text-slate-400">·</span>
-                      <span className="text-slate-500">Next Day Onwards ({minBookableDate}+)</span>
+                      <span aria-hidden="true" className="text-neutral-600">·</span>
+                      <span className="text-neutral-400">Next Day Onwards ({minBookableDate}+)</span>
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
                       My Bookings, Payments & Official Slips
                     </h2>
-                    <p className="text-xs sm:text-sm text-slate-600">
+                    <p className="text-xs sm:text-sm text-neutral-400">
                       पेमेंट से पहले एडिट करें, रसीद देखें, या नई बुकिंग के लिए बड़ा फॉर्म पॉपअप खोलें।
                     </p>
                   </div>
@@ -802,7 +802,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                   <button
                     type="button"
                     onClick={openBookingPopup}
-                    className="min-h-[44px] px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-sm whitespace-nowrap shrink-0"
+                    className="min-h-[44px] px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-sm whitespace-nowrap shrink-0"
                   >
                     <PlusCircle className="w-4 h-4" />
                     <span>+ Book New Event / Add Pcs</span>
@@ -812,17 +812,17 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                 {/* Search & Status Filters */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <div className="relative flex-1 max-w-md">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search booking number, location..."
-                      className="w-full pl-10 pr-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-sm"
+                      className="w-full pl-10 pr-3 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400 shadow-sm"
                     />
                   </div>
 
-                  <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-stone-200 text-xs overflow-x-auto shadow-sm">
+                  <div className="flex items-center gap-1.5 p-1 bg-neutral-900 rounded-xl border border-neutral-800 text-xs overflow-x-auto shadow-sm">
                     {[
                       { key: 'all', label: `All (${visibleBookings.length})` },
                       { key: 'utr_submitted', label: 'UTR Pending' },
@@ -837,8 +837,8 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                         onClick={() => setStatusFilter(tab.key as any)}
                         className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer whitespace-nowrap ${
                           statusFilter === tab.key
-                            ? 'bg-[#0f172a] text-amber-300'
-                            : 'text-slate-600 hover:text-slate-900'
+                            ? 'bg-amber-400 text-black'
+                            : 'text-neutral-400 hover:text-white'
                         }`}
                       >
                         {tab.label}
@@ -848,9 +848,9 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                 </div>
 
                 {/* Clean Bookings Table */}
-                <div className="overflow-x-auto rounded-3xl border border-stone-200 bg-white shadow-sm">
-                  <table className="w-full text-left text-xs text-slate-700">
-                    <thead className="bg-stone-50 text-slate-600 border-b border-stone-200 uppercase tracking-wider text-[11px]">
+                <div className="overflow-x-auto rounded-3xl border border-neutral-800 bg-neutral-900 shadow-lg">
+                  <table className="w-full text-left text-xs text-neutral-300">
+                    <thead className="bg-neutral-950 text-neutral-400 border-b border-neutral-800 uppercase tracking-wider text-[11px]">
                       <tr>
                         <th className="px-4 py-3.5 font-bold">Slip No. & Dates</th>
                         <th className="px-4 py-3.5 font-bold">Event & Items (Pcs)</th>
@@ -861,32 +861,32 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                         <th className="px-4 py-3.5 font-bold text-center">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-stone-100">
+                    <tbody className="divide-y divide-neutral-800/80">
                       {filteredBookings.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
-                            कोई बुकिंग नहीं मिली। नई बुकिंग करने के लिए <strong>"+ Book New Event / Add Pcs"</strong> दबाएँ।
+                          <td colSpan={7} className="px-4 py-10 text-center text-neutral-400">
+                            कोई बुकिंग नहीं मिली। नई बुकिंग करने के लिए <strong className="text-amber-400">"+ Book New Event / Add Pcs"</strong> दबाएँ।
                           </td>
                         </tr>
                       ) : (
                         filteredBookings.map((b) => (
-                          <tr key={b.id} className="hover:bg-stone-50/80 transition-colors">
+                          <tr key={b.id} className="hover:bg-neutral-950/60 transition-colors">
                             <td className="px-4 py-3.5 whitespace-nowrap font-mono">
-                              <div className="font-bold text-slate-900">{b.bookingNumber}</div>
-                              <div className="text-[11px] text-slate-600 flex items-center gap-1 mt-0.5">
-                                <Calendar className="w-3 h-3 text-amber-600" />
+                              <div className="font-bold text-white">{b.bookingNumber}</div>
+                              <div className="text-[11px] text-neutral-400 flex items-center gap-1 mt-0.5">
+                                <Calendar className="w-3 h-3 text-amber-400" />
                                 <span>
                                   {b.eventDate}
                                   {b.eventEndDate && b.eventEndDate !== b.eventDate ? ` → ${b.eventEndDate}` : ''}
                                 </span>
                               </div>
                               {b.totalDays && b.totalDays > 1 && (
-                                <span className="text-[10px] text-amber-700 font-sans font-semibold">
+                                <span className="text-[10px] text-amber-400 font-sans font-semibold">
                                   ({b.totalDays} दिन का कार्यक्रम)
                                 </span>
                               )}
                               {b.editedByCustomer && (
-                                <div className="text-[10px] text-amber-700 font-sans font-semibold mt-0.5">
+                                <div className="text-[10px] text-amber-400 font-sans font-semibold mt-0.5">
                                   Edited ({b.editCount || 1}×)
                                 </div>
                               )}
@@ -902,17 +902,17 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                                     className="w-9 h-11 object-cover rounded border border-amber-400 cursor-pointer shadow-sm"
                                   />
                                   <div>
-                                    <span className="px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold">
+                                    <span className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-bold">
                                       Paper Slip
                                     </span>
-                                    <div className="text-[10px] text-slate-500 mt-0.5 max-w-[180px] truncate">
+                                    <div className="text-[10px] text-neutral-400 mt-0.5 max-w-[180px] truncate">
                                       {b.requirementItemsText}
                                     </div>
                                   </div>
                                 </div>
                               ) : (
                                 <div className="space-y-1">
-                                  <span className="px-2 py-0.5 rounded bg-stone-100 border border-stone-200 text-slate-900 text-[11px] font-bold capitalize">
+                                  <span className="px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700 text-white text-[11px] font-bold capitalize">
                                     {b.eventType === 'custom_items'
                                       ? 'Custom Pcs Setup'
                                       : b.eventType === 'birthday'
@@ -920,7 +920,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                                       : b.eventType}
                                   </span>
                                   {b.selectedItems && b.selectedItems.length > 0 && (
-                                    <div className="text-[11px] text-slate-600 max-w-[220px]">
+                                    <div className="text-[11px] text-neutral-400 max-w-[220px]">
                                       {b.selectedItems.map((it) => `${it.name.split(' ')[0]} × ${it.qty}`).join(', ')}
                                     </div>
                                   )}
@@ -930,7 +930,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
 
                             <td className="px-4 py-3.5 max-w-[180px]">
                               <div className="flex items-start gap-1">
-                                <MapPin className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                                <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
                                 <span className="truncate" title={b.location}>{b.location}</span>
                               </div>
                             </td>
@@ -938,28 +938,28 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                             <td className="px-4 py-3.5 text-right font-mono font-bold whitespace-nowrap tabular-nums">
                               {b.totalAmount === 0 || b.status === 'quote_pending' ? (
                                 <div>
-                                  <span className="text-amber-700 text-sm">₹00</span>
-                                  <div className="text-[10px] text-slate-500 font-sans">मालिक रेट तय करेंगे</div>
+                                  <span className="text-amber-400 text-sm">₹00</span>
+                                  <div className="text-[10px] text-neutral-400 font-sans">मालिक रेट तय करेंगे</div>
                                   {b.discountCode && (
-                                    <div className="text-[10px] text-emerald-700">Code: {b.discountCode}</div>
+                                    <div className="text-[10px] text-emerald-400">Code: {b.discountCode}</div>
                                   )}
                                 </div>
                               ) : (
                                 <div>
-                                  <span className="text-slate-950 text-sm">₹{b.totalAmount.toLocaleString('en-IN')}</span>
-                                  <div className="text-[10px] text-slate-500">{b.paymentMode}</div>
+                                  <span className="text-white text-sm">₹{b.totalAmount.toLocaleString('en-IN')}</span>
+                                  <div className="text-[10px] text-neutral-400">{b.paymentMode}</div>
                                   {b.discountCode && (b.discountAmount || 0) > 0 && (
-                                    <div className="text-[10px] text-emerald-700">
+                                    <div className="text-[10px] text-emerald-400">
                                       -₹{b.discountAmount?.toLocaleString('en-IN')} ({b.discountCode})
                                     </div>
                                   )}
                                   {(b.rewardUsed || 0) > 0 && (
-                                    <div className="text-[10px] text-emerald-700">
+                                    <div className="text-[10px] text-emerald-400">
                                       -₹{b.rewardUsed?.toLocaleString('en-IN')} Reward Off
                                     </div>
                                   )}
                                   {getBookingRewardEarned(b, rewardPercent) > 0 && (
-                                    <div className="text-[10px] text-amber-700">
+                                    <div className="text-[10px] text-amber-400">
                                       +₹{getBookingRewardEarned(b, rewardPercent).toLocaleString('en-IN')} ({rewardPercent}% Reward)
                                     </div>
                                   )}
@@ -969,17 +969,17 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
 
                             <td className="px-4 py-3.5 text-right font-mono whitespace-nowrap tabular-nums">
                               {b.totalAmount === 0 || b.status === 'quote_pending' ? (
-                                <span className="text-slate-400 text-[11px]">रेट तय होने पर</span>
+                                <span className="text-neutral-500 text-[11px]">रेट तय होने पर</span>
                               ) : (
                                 <>
-                                  <div className="text-emerald-700 font-bold">
+                                  <div className="text-emerald-400 font-bold">
                                     Paid: ₹{b.advancePaid.toLocaleString('en-IN')}
                                   </div>
-                                  <div className="text-amber-700 text-[11px] font-semibold">
+                                  <div className="text-amber-400 text-[11px] font-semibold">
                                     Due: ₹{b.balanceDue.toLocaleString('en-IN')}
                                   </div>
                                   {b.pendingUtrNumber && b.status === 'utr_submitted' && (
-                                    <div className="text-[10px] text-cyan-800 mt-0.5">
+                                    <div className="text-[10px] text-cyan-300 mt-0.5">
                                       UTR: {b.pendingUtrNumber}
                                     </div>
                                   )}
@@ -989,23 +989,23 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
 
                             <td className="px-4 py-3.5 text-center whitespace-nowrap">
                               {b.status === 'cancelled' ? (
-                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-rose-50 text-rose-700 border-rose-200">
+                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-rose-950/60 text-rose-300 border-rose-700/60">
                                   Cancelled
                                 </span>
                               ) : b.status === 'quote_pending' || b.totalAmount === 0 ? (
-                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-amber-50 text-amber-800 border-amber-200">
+                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-amber-950/60 text-amber-300 border-amber-700/60">
                                   Owner Rate Pending
                                 </span>
                               ) : b.status === 'utr_submitted' ? (
-                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-cyan-50 text-cyan-800 border-cyan-200">
+                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-cyan-950/60 text-cyan-300 border-cyan-700/60">
                                   UTR Verify Pending
                                 </span>
                               ) : b.status === 'confirmed' || b.status === 'completed' ? (
-                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-200 capitalize">
+                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-emerald-950/60 text-emerald-300 border-emerald-700/60 capitalize">
                                   {b.status}
                                 </span>
                               ) : (
-                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-amber-50 text-amber-800 border-amber-200">
+                                <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold border bg-amber-950/60 text-amber-300 border-amber-700/60">
                                   Payment Pending
                                 </span>
                               )}
@@ -1021,7 +1021,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                                         onStartEditBooking(b);
                                       }
                                     }}
-                                    className="px-2.5 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-400 text-amber-900 hover:text-slate-950 border border-amber-300 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                                    className="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-400 text-amber-300 hover:text-black border border-amber-500/40 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
                                     title="Edit Booking Before Payment"
                                   >
                                     <Edit3 className="w-3.5 h-3.5" />
@@ -1032,9 +1032,9 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => onViewSlip(b)}
-                                  className="px-2.5 py-1.5 rounded-lg bg-[#0f172a] hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                  className="px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 text-xs font-semibold flex items-center gap-1 cursor-pointer"
                                 >
-                                  <FileText className="w-3.5 h-3.5 text-amber-300" />
+                                  <FileText className="w-3.5 h-3.5 text-amber-400" />
                                   <span>Slip</span>
                                 </button>
 
@@ -1069,7 +1069,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                                       <button
                                         type="button"
                                         onClick={() => setConfirmCancelId(null)}
-                                        className="px-2 py-1.5 rounded-lg bg-stone-200 text-slate-700 text-xs cursor-pointer"
+                                        className="px-2 py-1.5 rounded-lg bg-neutral-800 text-neutral-300 text-xs cursor-pointer"
                                       >
                                         No
                                       </button>
@@ -1078,7 +1078,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                                     <button
                                       type="button"
                                       onClick={() => setConfirmCancelId(b.id)}
-                                      className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                      className="px-2.5 py-1.5 rounded-lg bg-rose-950/50 hover:bg-rose-900/70 text-rose-300 border border-rose-700/50 text-xs font-semibold flex items-center gap-1 cursor-pointer"
                                       title="Cancel Booking"
                                     >
                                       <XCircle className="w-3.5 h-3.5" />
@@ -1101,20 +1101,20 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
         </section>
       )}
 
-      {/* FOCUSED BOOKING DETAILS POPUP MODAL (Essential Form Fields Only) */}
+      {/* FOCUSED BOOKING DETAILS POPUP MODAL (Original Dark Obsidian & Gold Theme) */}
       {modalVisible && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-slate-950/75 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-black/80 backdrop-blur-sm"
           onClick={closeBookingPopup}
         >
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl bg-[#f8f7f3] text-slate-900 border border-stone-300 shadow-2xl overflow-hidden"
+            className="w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl bg-neutral-950 text-neutral-100 border border-neutral-800 shadow-2xl overflow-hidden"
           >
             {/* Minimal Modal Header */}
-            <div className="px-5 sm:px-6 py-3.5 bg-[#0f172a] text-white border-b border-slate-800 flex items-center justify-between gap-4 shrink-0">
-              <h3 className="text-base sm:text-lg font-extrabold text-white">
+            <div className="px-5 sm:px-6 py-3.5 bg-neutral-900 text-white border-b border-neutral-800 flex items-center justify-between gap-4 shrink-0">
+              <h3 className="text-base sm:text-lg font-extrabold text-amber-400">
                 {editingBooking
                   ? `बुकिंग एडिट करें (${editingBooking.bookingNumber})`
                   : 'बुकिंग विवरण भरें (Booking Details)'}
@@ -1123,7 +1123,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
               <button
                 type="button"
                 onClick={closeBookingPopup}
-                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white cursor-pointer shrink-0"
+                className="p-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white cursor-pointer shrink-0"
                 aria-label="Close Booking Popup"
               >
                 <X className="w-5 h-5" />
@@ -1133,21 +1133,21 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
             {/* Focused Form Content */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               {formError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs font-semibold flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-700/60 text-rose-200 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
                   <span>{formError}</span>
                 </div>
               )}
 
               {/* 01. Essential Customer & Event Fields */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200 shadow-sm space-y-3.5">
-                <div className="text-xs font-extrabold text-slate-900 uppercase tracking-wide border-b border-stone-200 pb-2">
+              <div className="p-4 sm:p-5 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-sm space-y-3.5">
+                <div className="text-xs font-extrabold text-amber-400 uppercase tracking-wide border-b border-neutral-800 pb-2">
                   01. Customer & Event Details
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-neutral-300 mb-1">
                       Customer Full Name *
                     </label>
                     <input
@@ -1156,12 +1156,12 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="Full Name"
-                      className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-neutral-300 mb-1">
                       Mobile Number *
                     </label>
                     <input
@@ -1170,45 +1170,45 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="10-digit mobile"
-                      className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-sm font-mono text-slate-900 focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-sm font-mono text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-neutral-300 mb-1">
                       Event Date *
                     </label>
                     <button
                       type="button"
                       onClick={() => setCalendarModalOpen(true)}
-                      className="w-full min-h-[40px] px-3 py-2 bg-amber-50 border border-amber-400 hover:bg-amber-100 rounded-xl text-left flex items-center justify-between gap-2 cursor-pointer transition-colors"
+                      className="w-full min-h-[40px] px-3 py-2 bg-neutral-950 border border-amber-500/50 hover:bg-neutral-800 rounded-xl text-left flex items-center justify-between gap-2 cursor-pointer transition-colors"
                     >
                       <div className="flex items-center gap-2 overflow-hidden">
-                        <Calendar className="w-4 h-4 text-amber-700 shrink-0" />
+                        <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
                         {eventDate ? (
-                          <span className="text-xs font-mono font-bold text-slate-900 truncate tabular-nums">
+                          <span className="text-xs font-mono font-bold text-white truncate tabular-nums">
                             {eventDate}{eventEndDate && eventEndDate !== eventDate ? ` → ${eventEndDate}` : ''} ({totalDays}d)
                           </span>
                         ) : (
-                          <span className="text-xs font-semibold text-amber-900 truncate">
+                          <span className="text-xs font-semibold text-amber-300 truncate">
                             {minBookableDate}+ चुनें
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] bg-[#0f172a] text-amber-300 font-bold px-2 py-0.5 rounded-md shrink-0">
+                      <span className="text-[11px] bg-amber-400 text-black font-bold px-2 py-0.5 rounded-md shrink-0">
                         Pick
                       </span>
                     </button>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-neutral-300 mb-1">
                       Booking Type *
                     </label>
                     <select
                       value={eventType}
                       onChange={(e) => setEventType(e.target.value as EventType)}
-                      className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-400"
                     >
                       <option value="custom_items">Equipment Items (Pcs)</option>
                       <option value="birthday">Birthday Party (₹{birthdayPrice.toLocaleString('en-IN')})</option>
@@ -1218,7 +1218,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-neutral-300 mb-1">
                       Event Location *
                     </label>
                     <input
@@ -1227,14 +1227,14 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
                       placeholder="Village / Ward / Venue"
-                      className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Voice Mic Quick Add Bar */}
-              <div className="p-3.5 rounded-2xl bg-white border border-stone-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <button
                     type="button"
@@ -1242,7 +1242,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                     className={`min-h-[40px] px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 cursor-pointer shrink-0 transition-all ${
                       isListening
                         ? 'bg-rose-600 hover:bg-rose-500 text-white animate-pulse shadow-md'
-                        : 'bg-[#0f172a] hover:bg-slate-800 text-amber-300'
+                        : 'bg-amber-400 hover:bg-amber-300 text-black'
                     }`}
                   >
                     {isListening ? (
@@ -1258,7 +1258,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                     )}
                   </button>
 
-                  <span className="text-[11px] text-slate-600 truncate">
+                  <span className="text-[11px] text-neutral-300 truncate">
                     बोलें: "Horn 100 pcs, Box set" — सामान अपने-आप जुड़ जाएगा
                   </span>
                 </div>
@@ -1267,10 +1267,10 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                   <div
                     className={`px-3 py-1.5 rounded-xl text-[11px] font-semibold border ${
                       voiceFeedback.type === 'success'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300'
                         : voiceFeedback.type === 'error'
-                        ? 'bg-rose-50 border-rose-200 text-rose-700'
-                        : 'bg-amber-50 border-amber-200 text-amber-900'
+                        ? 'bg-rose-950/60 border-rose-700/60 text-rose-300'
+                        : 'bg-amber-950/60 border-amber-700/60 text-amber-300'
                     }`}
                   >
                     {voiceFeedback.text}
@@ -1280,13 +1280,13 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
 
               {/* 02. Equipment Items (Only for itemized / birthday bookings) */}
               {!isOwnerQuotedEvent && (
-                <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between gap-2 border-b border-stone-200 pb-2">
-                    <div className="flex items-center gap-2 text-xs font-extrabold text-slate-900 uppercase tracking-wide">
-                      <Layers className="w-4 h-4 text-amber-600" />
+                <div className="p-4 sm:p-5 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between gap-2 border-b border-neutral-800 pb-2">
+                    <div className="flex items-center gap-2 text-xs font-extrabold text-amber-400 uppercase tracking-wide">
+                      <Layers className="w-4 h-4 text-amber-400" />
                       <span>02. Select Equipment (Pcs)</span>
                     </div>
-                    <span className="text-xs font-mono font-extrabold text-emerald-700 tabular-nums">
+                    <span className="text-xs font-mono font-extrabold text-emerald-400 tabular-nums">
                       ₹{calculatedTotal.toLocaleString('en-IN')}
                     </span>
                   </div>
@@ -1303,8 +1303,8 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                           key={plan.id}
                           className={`p-2.5 rounded-xl border transition-all flex flex-col justify-between gap-2 ${
                             qty > 0
-                              ? 'bg-amber-50 border-amber-400'
-                              : 'bg-stone-50 border-stone-200'
+                              ? 'bg-amber-500/10 border-amber-400/70'
+                              : 'bg-neutral-950 border-neutral-800'
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -1314,14 +1314,14 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                                   src={itemImg}
                                   alt={plan.nameEn || plan.nameHi}
                                   referrerPolicy="no-referrer"
-                                  className="w-9 h-9 rounded-lg object-cover border border-stone-300 shrink-0"
+                                  className="w-9 h-9 rounded-lg object-cover border border-neutral-700 shrink-0"
                                 />
                               )}
                               <div className="min-w-0">
-                                <div className="text-xs font-bold text-slate-900 truncate">
+                                <div className="text-xs font-bold text-white truncate">
                                   {plan.nameEn || plan.nameHi}
                                 </div>
-                                <div className="text-[11px] font-mono text-amber-800 font-bold tabular-nums">
+                                <div className="text-[11px] font-mono text-amber-400 font-bold tabular-nums">
                                   ₹{plan.price.toLocaleString('en-IN')} / {plan.unitLabel || 'pc'}
                                 </div>
                               </div>
@@ -1329,12 +1329,12 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                           </div>
 
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-medium text-slate-600">Qty:</span>
+                            <span className="text-[11px] font-medium text-neutral-400">Qty:</span>
                             <div className="flex items-center gap-1">
                               <button
                                 type="button"
                                 onClick={() => updateItemQty(plan.id, -1)}
-                                className="w-7 h-7 rounded-lg bg-white hover:bg-stone-200 border border-stone-300 text-slate-900 flex items-center justify-center cursor-pointer"
+                                className="w-7 h-7 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white flex items-center justify-center cursor-pointer"
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
@@ -1343,12 +1343,12 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                                 min={0}
                                 value={qty}
                                 onChange={(e) => setExactItemQty(plan.id, parseInt(e.target.value, 10))}
-                                className="w-12 text-center py-0.5 bg-white border border-stone-300 rounded-lg text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-amber-500 tabular-nums"
+                                className="w-12 text-center py-0.5 bg-neutral-900 border border-neutral-700 rounded-lg text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 tabular-nums"
                               />
                               <button
                                 type="button"
                                 onClick={() => updateItemQty(plan.id, 1)}
-                                className="w-7 h-7 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center justify-center cursor-pointer font-bold"
+                                className="w-7 h-7 rounded-lg bg-amber-400 hover:bg-amber-300 text-black flex items-center justify-center cursor-pointer font-bold"
                               >
                                 <Plus className="w-3 h-3" />
                               </button>
@@ -1364,11 +1364,11 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
               {/* 03. Requirement Slip Photo (Optional) */}
               <div
                 ref={paperSlipSectionRef}
-                className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200 shadow-sm space-y-3"
+                className="p-4 sm:p-5 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-sm space-y-3"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-xs font-extrabold text-slate-900 uppercase tracking-wide">
-                    <Camera className="w-4 h-4 text-amber-600" />
+                  <div className="flex items-center gap-2 text-xs font-extrabold text-amber-400 uppercase tracking-wide">
+                    <Camera className="w-4 h-4 text-amber-400" />
                     <span>03. Requirement Slip Photo (Optional)</span>
                   </div>
 
@@ -1384,7 +1384,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                       />
                       <label
                         htmlFor="paper-slip-file"
-                        className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold rounded-xl text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                        className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-black font-bold rounded-xl text-xs inline-flex items-center gap-1.5 cursor-pointer"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         <span>Upload Slip Photo</span>
@@ -1394,7 +1394,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                 </div>
 
                 {requirementPhoto && (
-                  <div className="p-2.5 bg-stone-50 rounded-xl border border-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="p-2.5 bg-neutral-950 rounded-xl border border-amber-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3 w-full sm:w-auto">
                       <img
                         src={requirementPhoto}
@@ -1407,14 +1407,14 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                         value={requirementItemsText}
                         onChange={(e) => setRequirementItemsText(e.target.value)}
                         placeholder="Slip items note..."
-                        className="flex-1 sm:w-72 px-3 py-1.5 bg-white border border-stone-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-amber-500"
+                        className="flex-1 sm:w-72 px-3 py-1.5 bg-neutral-900 border border-neutral-700 rounded-lg text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400"
                       />
                     </div>
 
                     <button
                       type="button"
                       onClick={handleRemovePhoto}
-                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
+                      className="px-2.5 py-1 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-700/60 rounded-lg text-xs font-semibold inline-flex items-center gap-1 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                       <span>Remove</span>
@@ -1424,14 +1424,14 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
               </div>
 
               {/* 04. Payment Mode, Coupon Code & Notes */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-white border border-stone-200 shadow-sm space-y-3.5">
-                <div className="text-xs font-extrabold text-slate-900 uppercase tracking-wide border-b border-stone-200 pb-2">
+              <div className="p-4 sm:p-5 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-sm space-y-3.5">
+                <div className="text-xs font-extrabold text-amber-400 uppercase tracking-wide border-b border-neutral-800 pb-2">
                   04. Payment, Coupon & Notes
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-neutral-300 mb-1.5">
                       Payment Mode *
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -1443,8 +1443,8 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                         }}
                         className={`px-3 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
                           paymentMode === 'UPI'
-                            ? 'bg-emerald-50 border-emerald-500 text-emerald-900'
-                            : 'bg-stone-50 border-stone-200 text-slate-600'
+                            ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300'
+                            : 'bg-neutral-950 border-neutral-800 text-neutral-400'
                         }`}
                       >
                         <CreditCard className="w-4 h-4" />
@@ -1459,8 +1459,8 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                         }}
                         className={`px-3 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
                           paymentMode === 'Cash'
-                            ? 'bg-amber-50 border-amber-500 text-amber-950'
-                            : 'bg-stone-50 border-stone-200 text-slate-600'
+                            ? 'bg-amber-950/60 border-amber-400 text-amber-300'
+                            : 'bg-neutral-950 border-neutral-800 text-neutral-400'
                         }`}
                       >
                         <Banknote className="w-4 h-4" />
@@ -1470,8 +1470,8 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
-                      <Tag className="w-3.5 h-3.5 text-amber-600" />
+                    <label className="text-xs font-bold text-neutral-300 mb-1.5 flex items-center gap-1">
+                      <Tag className="w-3.5 h-3.5 text-amber-400" />
                       <span>Coupon Code (Optional)</span>
                     </label>
                     <div className="flex gap-2">
@@ -1484,13 +1484,13 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                         }}
                         disabled={!!effectiveDiscountCode}
                         placeholder="Enter coupon code"
-                        className="flex-1 px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-mono font-bold uppercase text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 disabled:opacity-60"
+                        className="flex-1 px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-xs font-mono font-bold uppercase text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400 disabled:opacity-60"
                       />
                       {effectiveDiscountCode ? (
                         <button
                           type="button"
                           onClick={handleRemoveDiscount}
-                          className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold cursor-pointer"
+                          className="px-3 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-700/60 text-xs font-bold cursor-pointer"
                         >
                           Remove
                         </button>
@@ -1498,7 +1498,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                         <button
                           type="button"
                           onClick={() => handleApplyDiscount()}
-                          className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold cursor-pointer"
+                          className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold cursor-pointer"
                         >
                           Apply
                         </button>
@@ -1514,7 +1514,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                               key={c.id}
                               type="button"
                               onClick={() => handleApplyDiscount(c.code)}
-                              className="px-2 py-0.5 rounded-md bg-amber-50 hover:bg-amber-400 text-slate-900 border border-amber-300 font-mono font-bold text-[11px] cursor-pointer transition-colors"
+                              className="px-2 py-0.5 rounded-md bg-neutral-950 hover:bg-amber-400 text-amber-300 hover:text-black border border-amber-500/40 font-mono font-bold text-[11px] cursor-pointer transition-colors"
                             >
                               {c.code}
                             </button>
@@ -1523,19 +1523,19 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                     )}
 
                     {discountError && (
-                      <div className="text-[11px] text-rose-700 font-medium mt-1">
+                      <div className="text-[11px] text-rose-400 font-medium mt-1">
                         {discountError}
                       </div>
                     )}
 
                     {!discountError && appliedDiscountCode && activeDiscountEval && !activeDiscountEval.valid && (
-                      <div className="text-[11px] text-rose-700 font-medium mt-1">
+                      <div className="text-[11px] text-rose-400 font-medium mt-1">
                         {activeDiscountEval.error}
                       </div>
                     )}
 
                     {effectiveDiscountCode && (
-                      <div className="text-[11px] text-emerald-700 font-bold mt-1">
+                      <div className="text-[11px] text-emerald-400 font-bold mt-1">
                         {effectiveDiscountCode} Applied
                         {effectiveDiscountAmount > 0 ? ` (-₹${effectiveDiscountAmount.toLocaleString('en-IN')})` : ''}
                       </div>
@@ -1544,7 +1544,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-neutral-300 mb-1">
                     Notes / Instructions (Optional)
                   </label>
                   <textarea
@@ -1552,27 +1552,27 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                     value={specialNotes}
                     onChange={(e) => setSpecialNotes(e.target.value)}
                     placeholder="Event timing or special request..."
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 resize-none"
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400 resize-none"
                   />
                 </div>
               </div>
             </div>
 
             {/* Sticky Modal Footer with Total & Primary Submit */}
-            <div className="px-5 sm:px-6 py-3.5 bg-white border-t border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+            <div className="px-5 sm:px-6 py-3.5 bg-neutral-900 border-t border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
               <div className="font-mono">
-                <span className="text-slate-500 block text-[10px] uppercase font-sans font-bold">
+                <span className="text-neutral-400 block text-[10px] uppercase font-sans font-bold">
                   {isOwnerQuotedEvent ? 'Rate' : 'Total Payable'}
                 </span>
                 {isOwnerQuotedEvent ? (
-                  <span className="text-amber-700 font-extrabold text-sm">Owner Set Rate (₹00)</span>
+                  <span className="text-amber-400 font-extrabold text-sm">Owner Set Rate (₹00)</span>
                 ) : (
                   <div className="flex items-baseline gap-2 flex-wrap tabular-nums">
-                    <span className="text-slate-950 font-extrabold text-lg">
+                    <span className="text-white font-extrabold text-lg">
                       ₹{finalTotal.toLocaleString('en-IN')}
                     </span>
                     {(effectiveDiscountAmount > 0 || appliedRewardAmount > 0) && (
-                      <span className="text-slate-400 line-through text-xs">
+                      <span className="text-neutral-500 line-through text-xs">
                         ₹{calculatedTotal.toLocaleString('en-IN')}
                       </span>
                     )}
@@ -1584,14 +1584,14 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                 <button
                   type="button"
                   onClick={closeBookingPopup}
-                  className="min-h-[42px] px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-slate-700 text-xs font-bold cursor-pointer"
+                  className="min-h-[42px] px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  className="min-h-[42px] px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                  className="min-h-[42px] px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
                 >
                   {editingBooking ? (
                     <>
@@ -1632,22 +1632,22 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
       {/* High-Resolution Photo Viewer Modal */}
       {viewingPhotoUrl && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative max-w-2xl w-full bg-white border border-stone-300 rounded-2xl p-4 overflow-hidden shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-200 mb-3">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                <Camera className="w-4 h-4 text-amber-600" />
+          <div className="relative max-w-2xl w-full bg-neutral-900 border border-neutral-700 rounded-2xl p-4 overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-800 mb-3">
+              <div className="flex items-center gap-2 text-white font-bold text-sm">
+                <Camera className="w-4 h-4 text-amber-400" />
                 <span>Customer Handwritten Requirement Slip</span>
               </div>
               <button
                 type="button"
                 onClick={() => setViewingPhotoUrl(null)}
-                className="p-1.5 rounded-lg bg-stone-100 text-slate-600 hover:text-slate-900 cursor-pointer"
+                className="p-1.5 rounded-lg bg-neutral-800 text-neutral-300 hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="max-h-[75vh] overflow-auto rounded-lg bg-stone-100 flex items-center justify-center p-2 border border-stone-200">
+            <div className="max-h-[75vh] overflow-auto rounded-lg bg-neutral-950 flex items-center justify-center p-2 border border-neutral-800">
               <img
                 src={viewingPhotoUrl}
                 alt="Enlarged Customer List"

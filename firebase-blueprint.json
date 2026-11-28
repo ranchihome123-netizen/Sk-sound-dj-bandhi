@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "CustomerProfile": {
+      "title": "CustomerProfile",
+      "description": "Phone-OTP verified customer registration profile stored in Firestore",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the verified customer"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Customer full name"
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 16,
+          "pattern": "^\\+?[0-9]{10,15}$",
+          "description": "Verified E.164 mobile number"
+        },
+        "phoneVerified": {
+          "type": "boolean",
+          "description": "True when verified via Firebase Phone SMS OTP"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of registration"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last profile update"
+        }
+      },
+      "required": ["uid", "name", "phone", "phoneVerified", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/customers/{uid}": {
+      "schema": {
+        "$ref": "#/entities/CustomerProfile"
+      },
+      "description": "Private customer registration record accessible only to the verified customer or admin"
+    }
+  }
+}
