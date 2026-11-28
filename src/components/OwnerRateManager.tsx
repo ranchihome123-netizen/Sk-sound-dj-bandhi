@@ -1,11 +1,35 @@
-import React, { useRef, useState } from 'react';
-import { DJRatePlan } from '../types';
+import React, { useEffect, useRef, useState } from 'react';
+import { DJRatePlan, PriceCategoryMeta } from '../types';
 import { RATE_PLAN_IMAGES } from '../data/initialData';
-import { Edit3, Plus, Trash2, Check, X, Calendar, Music2, Camera, Upload, RotateCw } from 'lucide-react';
+import {
+  PRICE_CATEGORIES,
+  PriceCategoryFilter,
+  PriceCategoryKey,
+  getCategoryLabel,
+  resolveRateCategory
+} from '../utils/rateCategories';
+import {
+  Armchair,
+  Camera,
+  Check,
+  Edit3,
+  FolderPlus,
+  Lightbulb,
+  Music2,
+  Plus,
+  RotateCw,
+  Shirt,
+  Trash2,
+  Upload,
+  Utensils,
+  X
+} from 'lucide-react';
 
 interface OwnerRateManagerProps {
   ratePlans: DJRatePlan[];
+  categories?: PriceCategoryMeta[];
   onUpdateRatePlans: (newPlans: DJRatePlan[]) => void;
+  onUpdateCategories?: (newCats: PriceCategoryMeta[]) => void;
 }
 
 const resizeImageFileToDataUrl = (file: File): Promise<string> =>
@@ -67,10 +91,14 @@ const rotateImageDataUrl = (src: string): Promise<string> =>
 
 export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
   ratePlans,
+  categories = PRICE_CATEGORIES,
   onUpdateRatePlans,
+  onUpdateCategories,
 }) => {
   const [editingPlan, setEditingPlan] = useState<DJRatePlan | null>(null);
   const [editName, setEditName] = useState('');
+  const [editNameHi, setEditNameHi] = useState('');
+  const [editCategory, setEditCategory] = useState<PriceCategoryKey>('dj');
   const [editPrice, setEditPrice] = useState<number>(0);
   const [editDuration, setEditDuration] = useState('');
   const [editUnitLabel, setEditUnitLabel] = useState('');
@@ -79,14 +107,20 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
   const [editRecommended, setEditRecommended] = useState('');
   const [editImageUrl, setEditImageUrl] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCatEn, setNewCatEn] = useState('');
+  const [newCatHi, setNewCatHi] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<PriceCategoryKey>(categories[0]?.key || 'dj');
 
   // New Plan form state
   const [newName, setNewName] = useState('');
+  const [newNameHi, setNewNameHi] = useState('');
+  const [newCategory, setNewCategory] = useState<PriceCategoryKey>('dj');
   const [newPrice, setNewPrice] = useState<number>(1000);
   const [newDuration, setNewDuration] = useState('Per Pc');
   const [newUnitLabel, setNewUnitLabel] = useState('Per Pc');
   const [newIsOwnerQuoted, setNewIsOwnerQuoted] = useState(false);
-  const [newDescription, setNewDescription] = useState('High quality DJ & Lighting equipment.');
+  const [newDescription, setNewDescription] = useState('High quality event setup & rental item.');
   const [newRecommended, setNewRecommended] = useState('Weddings, Parties & Functions');
   const [newImageUrl, setNewImageUrl] = useState('');
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -97,6 +131,50 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
   const [notification, setNotification] = useState<string | null>(null);
   const [planToDelete, setPlanToDelete] = useState<DJRatePlan | null>(null);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const handleBackClose = (e: Event) => {
+      if (planToDelete) {
+        e.preventDefault();
+        setPlanToDelete(null);
+      } else if (editingPlan) {
+        e.preventDefault();
+        setEditingPlan(null);
+      } else if (showAddModal) {
+        e.preventDefault();
+        setShowAddModal(false);
+      } else if (showCategoryModal) {
+        e.preventDefault();
+        setShowCategoryModal(false);
+      }
+    };
+    window.addEventListener('sk-close-child-modal', handleBackClose);
+    return () => window.removeEventListener('sk-close-child-modal', handleBackClose);
+  }, [planToDelete, editingPlan, showAddModal, showCategoryModal]);
+
+  const getCategoryIcon = (cat: PriceCategoryKey, className = 'w-5 h-5 text-amber-400') => {
+    switch (cat) {
+      case 'light':
+        return <Lightbulb className={className} />;
+      case 'utensils':
+        return <Utensils className={className} />;
+      case 'table_chair':
+        return <Armchair className={className} />;
+      case 'clothes':
+        return <Shirt className={className} />;
+      case 'dj':
+      default:
+        return <Music2 className={className} />;
+    }
+  };
+
+  const activeCategoryKey = categories.some((c) => c.key === categoryFilter)
+    ? categoryFilter
+    : (categories[0]?.key || 'dj');
+
+  const filteredRatePlans = ratePlans.filter(
+    (plan) => resolveRateCategory(plan, categories) === activeCategoryKey
+  );
 
   const getProductImage = (plan: DJRatePlan) => {
     if (failedImages[plan.id]) return undefined;
@@ -150,6 +228,8 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
     setPhotoError(null);
     setEditingPlan(plan);
     setEditName(plan.nameEn || plan.nameHi);
+    setEditNameHi(plan.nameHi || plan.nameEn);
+    setEditCategory(resolveRateCategory(plan, categories));
     setEditPrice(plan.price);
     setEditDuration(plan.durationLabel);
     setEditUnitLabel(plan.unitLabel || 'Per Pc');
@@ -172,8 +252,9 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
       if (plan.id === editingPlan.id) {
         return {
           ...plan,
-          nameHi: editName.trim(),
+          nameHi: (editNameHi || editName).trim(),
           nameEn: editName.trim(),
+          category: editCategory,
           price: editIsOwnerQuoted ? 0 : editPrice,
           isOwnerQuoted: editIsOwnerQuoted,
           unitLabel: editUnitLabel.trim() || 'Per Pc',
@@ -200,7 +281,7 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
 
     const newPlan: DJRatePlan = {
       id: 'rate_' + Date.now(),
-      nameHi: newName.trim(),
+      nameHi: (newNameHi || newName).trim(),
       nameEn: newName.trim(),
       price: newIsOwnerQuoted ? 0 : newPrice,
       isOwnerQuoted: newIsOwnerQuoted,
@@ -208,19 +289,22 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
       durationLabel: newDuration.trim(),
       descriptionHi: newDescription.trim(),
       recommendedFor: newRecommended.trim(),
-      category: newIsOwnerQuoted ? 'event' : 'equipment',
+      category: newCategory,
       imageUrl: newImageUrl.trim() || undefined,
       popular: false,
     };
 
     onUpdateRatePlans([...ratePlans, newPlan]);
+    setCategoryFilter(newCategory);
     setShowAddModal(false);
     setNewName('');
+    setNewNameHi('');
+    setNewCategory('dj');
     setNewPrice(1000);
     setNewDuration('Per Pc');
     setNewUnitLabel('Per Pc');
     setNewIsOwnerQuoted(false);
-    setNewDescription('High quality DJ & Lighting equipment.');
+    setNewDescription('High quality event setup & rental item.');
     setNewRecommended('Weddings, Parties & Functions');
     setNewImageUrl('');
     setPhotoError(null);
@@ -255,17 +339,30 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setPhotoError(null);
-              setShowAddModal(true);
-            }}
-            className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow w-fit shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add New Item / Rate</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {onUpdateCategories && (
+              <button
+                type="button"
+                onClick={() => setShowCategoryModal(true)}
+                className="px-3.5 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-amber-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <FolderPlus className="w-4 h-4" />
+                <span>Manage Categories</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setPhotoError(null);
+                setNewCategory(activeCategoryKey);
+                setShowAddModal(true);
+              }}
+              className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add New Item / Rate</span>
+            </button>
+          </div>
         </div>
 
         {/* Live Notification */}
@@ -285,23 +382,90 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
           </div>
         )}
 
-        {/* Compact BigBasket-Style Product Cards Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {ratePlans.map((plan) => {
+        {/* Large Clickable Bilingual Category Cards (No 'All' button) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+          {categories.map((cat) => {
+            const cnt = ratePlans.filter((p) => resolveRateCategory(p, categories) === cat.key).length;
+            const active = activeCategoryKey === cat.key;
+            return (
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => setCategoryFilter(cat.key)}
+                className={`p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 cursor-pointer transition-all ${
+                  active
+                    ? 'bg-amber-400 text-black border-amber-300 shadow-lg ring-2 ring-amber-400/40'
+                    : 'bg-neutral-950 text-white border-neutral-800 hover:border-amber-500/50 hover:bg-neutral-900/90'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      active
+                        ? 'bg-black/15 text-black'
+                        : 'bg-amber-400/10 border border-amber-400/30 text-amber-400'
+                    }`}
+                  >
+                    {getCategoryIcon(cat.key, `w-5 h-5 ${active ? 'text-black' : 'text-amber-400'}`)}
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold font-mono ${
+                      active
+                        ? 'bg-black/15 text-black'
+                        : 'bg-neutral-900 border border-neutral-800 text-amber-300'
+                    }`}
+                  >
+                    {cnt} Items
+                  </span>
+                </div>
+
+                <div className="min-w-0">
+                  <div className={`text-sm sm:text-base font-extrabold leading-tight truncate ${active ? 'text-black' : 'text-white'}`}>
+                    {cat.labelEn}
+                  </div>
+                  {cat.labelHi && cat.labelHi !== cat.labelEn && (
+                    <div className={`text-xs font-bold mt-0.5 truncate ${active ? 'text-neutral-900' : 'text-amber-300/90'}`}>
+                      {cat.labelHi}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active Category Products Header */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div className="text-sm font-extrabold text-amber-300 flex items-center gap-2">
+            {getCategoryIcon(activeCategoryKey, 'w-4 h-4 text-amber-400')}
+            <span>
+              {getCategoryLabel(activeCategoryKey, 'both', categories)} ({filteredRatePlans.length} Items)
+            </span>
+          </div>
+          <span className="text-[11px] text-neutral-400">
+            Sirf {getCategoryLabel(activeCategoryKey, 'both', categories)} ke products dikh rahe hain
+          </span>
+        </div>
+
+        {/* Compact Small-Photo Product Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {filteredRatePlans.map((plan) => {
             const imgSrc = getProductImage(plan);
             const isQuoted = plan.isOwnerQuoted || plan.price === 0;
+            const resolvedCat = resolveRateCategory(plan, categories);
 
             return (
               <div
                 key={plan.id}
-                className="group rounded-xl border border-neutral-800 bg-neutral-900 hover:border-amber-500/40 transition-transform duration-150 hover:-translate-y-0.5 flex flex-col justify-between overflow-hidden"
+                className="group rounded-2xl border border-neutral-800 bg-neutral-950 hover:border-amber-500/40 p-3 flex flex-col justify-between gap-2.5 transition-colors"
               >
                 <button
                   type="button"
                   onClick={() => startEdit(plan)}
-                  className="text-left focus-visible:outline-none cursor-pointer flex-1 flex flex-col"
+                  className="text-left focus-visible:outline-none cursor-pointer flex items-center gap-3"
                 >
-                  <div className="aspect-[4/3] w-full bg-neutral-950 relative overflow-hidden border-b border-neutral-800/80">
+                  {/* Small Compact Thumbnail Photo */}
+                  <div className="w-12 h-12 rounded-xl overflow-hidden border border-neutral-800 bg-neutral-900 shrink-0 flex items-center justify-center relative">
                     {imgSrc ? (
                       <img
                         src={imgSrc}
@@ -310,35 +474,32 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
                         onError={() =>
                           setFailedImages((prev) => ({ ...prev, [plan.id]: true }))
                         }
-                        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
+                        className="w-full h-full object-cover object-center"
                       />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-950 p-3 text-center">
-                        {plan.category === 'event' ? (
-                          <Calendar className="w-7 h-7 text-amber-400 mb-1" />
-                        ) : (
-                          <Music2 className="w-7 h-7 text-amber-400 mb-1" />
-                        )}
-                        <span className="text-[11px] font-semibold text-neutral-300 line-clamp-1">
-                          {plan.unitLabel || 'DJ Item'}
-                        </span>
-                      </div>
-                    )}
-
-                    {plan.popular && (
-                      <span className="absolute top-1.5 left-1.5 bg-amber-400 text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
-                        Popular
-                      </span>
+                      getCategoryIcon(resolvedCat, 'w-5 h-5 text-amber-400')
                     )}
                   </div>
 
-                  <div className="p-2.5 space-y-1 flex-1">
-                    <div className="text-[11px] text-neutral-400 truncate">
-                      {plan.unitLabel || plan.durationLabel}
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-xs font-bold text-white truncate">
+                        {plan.nameEn || plan.nameHi}
+                      </h3>
+                      {plan.popular && (
+                        <span className="bg-amber-400/20 text-amber-300 text-[9px] font-bold px-1.5 py-0.2 rounded uppercase shrink-0">
+                          Popular
+                        </span>
+                      )}
                     </div>
-                    <h3 className="text-xs font-semibold text-white line-clamp-2 leading-snug">
-                      {plan.nameEn || plan.nameHi}
-                    </h3>
+                    {plan.nameHi && plan.nameHi !== plan.nameEn && (
+                      <div className="text-[11px] text-amber-300/90 truncate">
+                        {plan.nameHi}
+                      </div>
+                    )}
+                    <div className="text-[10px] text-neutral-400 truncate">
+                      {getCategoryLabel(resolvedCat, 'both', categories)} · {plan.unitLabel || plan.durationLabel}
+                    </div>
                   </div>
                 </button>
 
@@ -406,15 +567,45 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
             <form onSubmit={saveEdit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-neutral-300 mb-1">
-                  Item / Package Name *
+                  Category (कैटेगरी चुनें) *
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value as PriceCategoryKey)}
                   className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-400"
-                />
+                >
+                  {categories.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.labelEn} / {c.labelHi}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                    English Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                    Hindi Name (हिंदी नाम)
+                  </label>
+                  <input
+                    type="text"
+                    value={editNameHi}
+                    onChange={(e) => setEditNameHi(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
               </div>
 
               {/* Item Photo Upload / Preview */}
@@ -599,16 +790,47 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
             <form onSubmit={handleAddNewPlan} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-neutral-300 mb-1">
-                  Item / Package Name *
+                  Category (कैटेगरी चुनें) *
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. Truss Stage Light / Smoke Machine"
+                <select
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value as PriceCategoryKey)}
                   className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-400"
-                />
+                >
+                  {categories.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.labelEn} / {c.labelHi}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                    English Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="e.g. Steel Plate / Plastic Chair"
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                    Hindi Name (हिंदी नाम)
+                  </label>
+                  <input
+                    type="text"
+                    value={newNameHi}
+                    onChange={(e) => setNewNameHi(e.target.value)}
+                    placeholder="जैसे: स्टील थाली / कुर्सी"
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
               </div>
 
               {/* New Item Photo Upload / Preview */}
@@ -809,6 +1031,134 @@ export const OwnerRateManager: React.FC<OwnerRateManagerProps> = ({
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Manage Categories Modal (Owner Only: Add / Edit Categories) */}
+      {showCategoryModal && onUpdateCategories && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <FolderPlus className="w-4 h-4 text-amber-400" />
+                <span>Manage Categories (कैटेगरी जोड़ें / एडिट करें)</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCategoryModal(false)}
+                className="text-neutral-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Existing Categories Editable List */}
+            <div className="space-y-2.5">
+              {categories.map((cat) => (
+                <div
+                  key={cat.key}
+                  className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center"
+                >
+                  <div className="sm:col-span-5">
+                    <label className="block text-[10px] text-neutral-400 mb-0.5">English Name</label>
+                    <input
+                      type="text"
+                      value={cat.labelEn}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        onUpdateCategories(
+                          categories.map((c) => (c.key === cat.key ? { ...c, labelEn: val } : c))
+                        );
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-neutral-900 border border-neutral-700 rounded-lg text-xs text-white focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                  <div className="sm:col-span-5">
+                    <label className="block text-[10px] text-neutral-400 mb-0.5">Hindi Name (हिंदी)</label>
+                    <input
+                      type="text"
+                      value={cat.labelHi}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        onUpdateCategories(
+                          categories.map((c) => (c.key === cat.key ? { ...c, labelHi: val } : c))
+                        );
+                      }}
+                      className="w-full px-2.5 py-1.5 bg-neutral-900 border border-neutral-700 rounded-lg text-xs text-amber-300 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                  <div className="sm:col-span-2 flex justify-end pt-3 sm:pt-0">
+                    {categories.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onUpdateCategories(categories.filter((c) => c.key !== cat.key));
+                          if (categoryFilter === cat.key) setCategoryFilter('all');
+                        }}
+                        className="p-1.5 rounded-lg bg-neutral-900 hover:bg-rose-950 text-neutral-400 hover:text-rose-400 border border-neutral-800 cursor-pointer"
+                        title="Delete Category"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add New Category Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!newCatEn.trim() && !newCatHi.trim()) return;
+                const key =
+                  'cat_' +
+                  (newCatEn.trim() || newCatHi.trim())
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '_') +
+                  '_' +
+                  Date.now().toString().slice(-4);
+                onUpdateCategories([
+                  ...categories,
+                  {
+                    key,
+                    labelEn: (newCatEn || newCatHi).trim(),
+                    labelHi: (newCatHi || newCatEn).trim()
+                  }
+                ]);
+                setNewCatEn('');
+                setNewCatHi('');
+                setNotification('New category added & synced to Customer Portal!');
+                setTimeout(() => setNotification(null), 3500);
+              }}
+              className="p-3.5 rounded-xl bg-neutral-950 border border-amber-500/30 space-y-2.5"
+            >
+              <div className="text-xs font-bold text-amber-300">
+                + Add New Category (नई कैटेगरी जोड़ें)
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <input
+                  type="text"
+                  value={newCatEn}
+                  onChange={(e) => setNewCatEn(e.target.value)}
+                  placeholder="English e.g. Generator / Tent"
+                  className="px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-xs text-white focus:outline-none focus:border-amber-400"
+                />
+                <input
+                  type="text"
+                  value={newCatHi}
+                  onChange={(e) => setNewCatHi(e.target.value)}
+                  placeholder="हिंदी जैसे: जनरेटर / टेंट"
+                  className="px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-xs text-white focus:outline-none focus:border-amber-400"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 px-4 bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs rounded-lg cursor-pointer"
+              >
+                + Add Category
+              </button>
+            </form>
           </div>
         </div>
       )}

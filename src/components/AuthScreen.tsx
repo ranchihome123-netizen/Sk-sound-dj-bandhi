@@ -90,9 +90,59 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   // Feedback
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [exitToast, setExitToast] = useState(false);
+
+  const authBackStateRef = useRef({ activeRoleTab, customerView });
+  const backPressedOnceRef = useRef(false);
+  const exitToastTimerRef = useRef<number | null>(null);
+  authBackStateRef.current = { activeRoleTab, customerView };
 
   useEffect(() => {
+    if (!window.history.state?.skAuthGuard) {
+      window.history.pushState({ skAuthGuard: true }, '');
+    }
+
+    const handlePopState = () => {
+      const state = authBackStateRef.current;
+
+      if (state.activeRoleTab === 'owner') {
+        setActiveRoleTab('customer');
+        setErrorMsg('');
+        setSuccessMsg('');
+        window.history.pushState({ skAuthGuard: true }, '');
+        return;
+      }
+
+      if (state.customerView !== 'login') {
+        setCustomerView('login');
+        setErrorMsg('');
+        setSuccessMsg('');
+        window.history.pushState({ skAuthGuard: true }, '');
+        return;
+      }
+
+      if (!backPressedOnceRef.current) {
+        backPressedOnceRef.current = true;
+        setExitToast(true);
+        if (exitToastTimerRef.current) {
+          window.clearTimeout(exitToastTimerRef.current);
+        }
+        exitToastTimerRef.current = window.setTimeout(() => {
+          backPressedOnceRef.current = false;
+          setExitToast(false);
+          if (!window.history.state?.skAuthGuard) {
+            window.history.pushState({ skAuthGuard: true }, '');
+          }
+        }, 2500);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
     return () => {
+      window.removeEventListener('popstate', handlePopState);
+      if (exitToastTimerRef.current) {
+        window.clearTimeout(exitToastTimerRef.current);
+      }
       clearRecaptchaVerifier(RECAPTCHA_CONTAINER_ID);
     };
   }, []);
@@ -1038,6 +1088,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         </div>
 
       </div>
+
+      {exitToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-neutral-900 border border-amber-400/70 text-amber-300 text-xs font-bold shadow-2xl whitespace-nowrap animate-pulse">
+          ऐप बंद करने के लिए 1 बार और Back दबाएँ · Press Back again to exit
+        </div>
+      )}
 
     </div>
   );

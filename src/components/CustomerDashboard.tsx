@@ -5,11 +5,21 @@ import {
   BusinessConfig,
   DJRatePlan,
   OfferBroadcast,
-  DiscountCode
+  DiscountCode,
+  PriceCategoryMeta
 } from '../types';
 import { canCustomerEditBooking } from '../utils/bookingUtils';
 import { getBookingRewardEarned, getCustomerRewardSummary } from '../utils/rewardUtils';
 import { RATE_PLAN_IMAGES } from '../data/initialData';
+import {
+  PRICE_CATEGORIES,
+  PriceCategoryFilter,
+  PriceCategoryKey,
+  PriceLanguageMode,
+  getBilingualUnit,
+  getCategoryLabel,
+  resolveRateCategory
+} from '../utils/rateCategories';
 import {
   Calendar,
   MapPin,
@@ -34,7 +44,12 @@ import {
   Layers,
   CheckCircle2,
   User,
-  Music2
+  Music2,
+  Lightbulb,
+  Utensils,
+  Armchair,
+  Shirt,
+  Languages
 } from 'lucide-react';
 
 export type CustomerPortalTab = 'overview' | 'bookings' | 'rates' | 'coupons' | 'location';
@@ -44,6 +59,7 @@ interface CustomerDashboardProps {
   myBookings: Booking[];
   business: BusinessConfig;
   ratePlans: DJRatePlan[];
+  categories?: PriceCategoryMeta[];
   discountCodes?: DiscountCode[];
   latestOfferBroadcast?: OfferBroadcast | null;
   activeTab: CustomerPortalTab;
@@ -63,6 +79,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
   myBookings,
   business,
   ratePlans,
+  categories = PRICE_CATEGORIES,
   discountCodes = [],
   latestOfferBroadcast = null,
   activeTab,
@@ -78,6 +95,43 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const [rateCategory, setRateCategory] = useState<PriceCategoryKey>(categories[0]?.key || 'dj');
+  const [rateLangMode, setRateLangMode] = useState<PriceLanguageMode>('both');
+
+  React.useEffect(() => {
+    const handleBackClose = (e: Event) => {
+      if (activePhotoUrl) {
+        e.preventDefault();
+        setActivePhotoUrl(null);
+      }
+    };
+    window.addEventListener('sk-close-child-modal', handleBackClose);
+    return () => window.removeEventListener('sk-close-child-modal', handleBackClose);
+  }, [activePhotoUrl]);
+
+  const getCategoryIcon = (cat: PriceCategoryKey, className = 'w-5 h-5 text-amber-400') => {
+    switch (cat) {
+      case 'light':
+        return <Lightbulb className={className} />;
+      case 'utensils':
+        return <Utensils className={className} />;
+      case 'table_chair':
+        return <Armchair className={className} />;
+      case 'clothes':
+        return <Shirt className={className} />;
+      case 'dj':
+      default:
+        return <Music2 className={className} />;
+    }
+  };
+
+  const activeRateCategory = categories.some((c) => c.key === rateCategory)
+    ? rateCategory
+    : (categories[0]?.key || 'dj');
+
+  const filteredOverviewRates = ratePlans.filter(
+    (plan) => resolveRateCategory(plan, categories) === activeRateCategory
+  );
 
   const getProductImage = (plan: DJRatePlan): string | undefined => {
     if (plan.imageUrl !== undefined) {
@@ -612,27 +666,130 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               )}
             </div>
 
-            {/* SECTION 2 (SECOND): COMPACT RATE LIST WITH SMALL PRODUCT PHOTOS */}
+            {/* SECTION 2 (SECOND): BILINGUAL 5-CATEGORY RATE LIST WITH SMALL PRODUCT PHOTOS */}
             <div className="p-5 sm:p-6 rounded-3xl bg-neutral-900 border border-neutral-800 shadow-lg space-y-4">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-                <h3 className="text-base sm:text-lg font-extrabold text-white flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-amber-400" />
-                  <span>DJ & Lighting Rate List</span>
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => onChangeTab('rates')}
-                  className="text-xs font-bold text-amber-400 hover:text-amber-300 cursor-pointer flex items-center gap-1"
-                >
-                  <span>All Rates ({ratePlans.length})</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-800 pb-3">
+                <div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-white flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-amber-400" />
+                    <span>Price List / रेट लिस्ट</span>
+                  </h3>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    DJ · Light · बर्तन (Utensils) · टेबल-कुर्सी (Table & Chair) · कपड़ा (Clothes)
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Language Toggle (Both / Hindi / English) */}
+                  <div className="flex items-center gap-1 p-1 rounded-xl bg-neutral-950 border border-neutral-800">
+                    <Languages className="w-3.5 h-3.5 text-amber-400 ml-1" />
+                    {[
+                      { key: 'both', label: 'HI+EN' },
+                      { key: 'hi', label: 'हिंदी' },
+                      { key: 'en', label: 'EN' }
+                    ].map((m) => (
+                      <button
+                        key={m.key}
+                        type="button"
+                        onClick={() => setRateLangMode(m.key as PriceLanguageMode)}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-colors ${
+                          rateLangMode === m.key
+                            ? 'bg-amber-400 text-black'
+                            : 'text-neutral-300 hover:text-white'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => onChangeTab('rates')}
+                    className="text-xs font-bold text-amber-400 hover:text-amber-300 cursor-pointer flex items-center gap-1 px-2 py-1"
+                  >
+                    <span>Full List / पूरी लिस्ट</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Large Clickable Bilingual Category Cards (No 'All' button) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+                {categories.map((cat) => {
+                  const cnt = ratePlans.filter((p) => resolveRateCategory(p, categories) === cat.key).length;
+                  const active = activeRateCategory === cat.key;
+                  const titlePrimary =
+                    rateLangMode === 'hi' ? cat.labelHi : cat.labelEn;
+                  const titleSecondary =
+                    rateLangMode === 'both' && cat.labelHi && cat.labelHi !== cat.labelEn
+                      ? cat.labelHi
+                      : '';
+                  return (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => setRateCategory(cat.key)}
+                      className={`p-3.5 sm:p-4 rounded-2xl border text-left flex flex-col justify-between gap-2.5 cursor-pointer transition-all ${
+                        active
+                          ? 'bg-amber-400 text-black border-amber-300 shadow-lg ring-2 ring-amber-400/40'
+                          : 'bg-neutral-950 text-white border-neutral-800 hover:border-amber-500/50 hover:bg-neutral-900/90'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                            active
+                              ? 'bg-black/15 text-black'
+                              : 'bg-amber-400/10 border border-amber-400/30 text-amber-400'
+                          }`}
+                        >
+                          {getCategoryIcon(cat.key, `w-5 h-5 ${active ? 'text-black' : 'text-amber-400'}`)}
+                        </div>
+                        <span
+                          className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold font-mono ${
+                            active
+                              ? 'bg-black/15 text-black'
+                              : 'bg-neutral-900 border border-neutral-800 text-amber-300'
+                          }`}
+                        >
+                          {cnt} {rateLangMode === 'hi' ? 'आइटम' : 'Items'}
+                        </span>
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className={`text-sm sm:text-base font-extrabold leading-tight truncate ${active ? 'text-black' : 'text-white'}`}>
+                          {titlePrimary}
+                        </div>
+                        {titleSecondary && (
+                          <div className={`text-xs font-bold mt-0.5 truncate ${active ? 'text-neutral-900' : 'text-amber-300/90'}`}>
+                            {titleSecondary}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Active Category Indicator */}
+              <div className="flex items-center justify-between gap-2 px-1 pt-1">
+                <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  {getCategoryIcon(activeRateCategory, 'w-4 h-4 text-amber-400')}
+                  <span>
+                    {getCategoryLabel(activeRateCategory, rateLangMode, categories)} ({filteredOverviewRates.length})
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {ratePlans.map((plan) => {
+                {filteredOverviewRates.map((plan) => {
                   const imgSrc = getProductImage(plan);
                   const hasValidImage = Boolean(imgSrc && !failedImages[plan.id]);
+                  const resolvedCat = resolveRateCategory(plan, categories);
+                  const enTitle = (plan.nameEn || plan.nameHi || '').trim();
+                  const hiTitle = (plan.nameHi || plan.nameEn || '').trim();
+
                   return (
                     <div
                       key={plan.id}
@@ -644,7 +801,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                           {hasValidImage ? (
                             <img
                               src={imgSrc}
-                              alt={plan.nameEn || plan.nameHi}
+                              alt={enTitle}
                               referrerPolicy="no-referrer"
                               onError={() =>
                                 setFailedImages((prev) => ({ ...prev, [plan.id]: true }))
@@ -652,14 +809,14 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <Music2 className="w-5 h-5 text-amber-400" />
+                            getCategoryIcon(resolvedCat, 'w-5 h-5 text-amber-400')
                           )}
                         </div>
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-bold text-white truncate">
-                              {plan.nameEn || plan.nameHi}
+                              {rateLangMode === 'hi' ? hiTitle : enTitle}
                             </span>
                             {plan.popular && (
                               <span className="px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 font-bold text-[9px] uppercase shrink-0">
@@ -667,8 +824,13 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                               </span>
                             )}
                           </div>
-                          <div className="text-[11px] text-neutral-400 truncate mt-0.5">
-                            {plan.unitLabel || plan.durationLabel}
+                          {rateLangMode === 'both' && hiTitle && hiTitle !== enTitle && (
+                            <div className="text-[11px] font-medium text-amber-300/90 truncate">
+                              {hiTitle}
+                            </div>
+                          )}
+                          <div className="text-[10px] text-neutral-400 truncate mt-0.5">
+                            {getCategoryLabel(resolvedCat, rateLangMode, categories)} · {getBilingualUnit(plan.unitLabel, rateLangMode)}
                           </div>
                         </div>
                       </div>
@@ -676,7 +838,9 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                       <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-800/80">
                         <span className="font-mono font-extrabold text-sm text-amber-400 tabular-nums">
                           {plan.isOwnerQuoted || plan.price === 0
-                            ? 'Owner Set'
+                            ? rateLangMode === 'hi'
+                              ? 'मालिक तय करेंगे'
+                              : 'Owner Set'
                             : `₹${plan.price.toLocaleString('en-IN')}`}
                         </span>
                         <button
@@ -684,7 +848,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
                           onClick={() => onOpenBookingForm({ plan })}
                           className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs cursor-pointer transition-colors"
                         >
-                          Book
+                          {rateLangMode === 'hi' ? 'बुक करें' : rateLangMode === 'en' ? 'Book' : 'Book / बुक'}
                         </button>
                       </div>
                     </div>

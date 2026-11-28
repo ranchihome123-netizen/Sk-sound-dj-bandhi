@@ -161,22 +161,22 @@ ${booking.discountCode && (booking.discountAmount || 0) > 0 ? `*Subtotal:* ₹${
   return (
     <div
       data-slip-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-sm"
     >
       <div
         data-slip-modal-card="true"
-        className="relative w-full max-w-2xl bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl overflow-hidden my-6"
+        className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-neutral-900 border border-neutral-700 rounded-2xl shadow-2xl overflow-hidden"
       >
         
-        {/* Top Action Bar (no-print) */}
-        <div className="no-print px-4 sm:px-5 py-3 bg-neutral-950 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-amber-400">
-              Official Booking Slip
+        {/* Slim Top Header Bar (no-print): Title, Slip Theme & Close only */}
+        <div className="no-print px-4 sm:px-5 py-2.5 bg-neutral-950 border-b border-neutral-800 flex items-center justify-between gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <span className="text-xs font-bold text-amber-400 whitespace-nowrap">
+              Booking Slip / रसीद
             </span>
 
             {/* Slip Background Theme Switcher */}
-            <div className="flex items-center gap-1 ml-1 pl-2 border-l border-neutral-800">
+            <div className="flex items-center gap-1 pl-2 border-l border-neutral-800">
               <Palette className="w-3.5 h-3.5 text-neutral-400 mr-0.5 hidden sm:inline" />
               {[
                 { key: 'royal_gold', label: 'Royal Gold' },
@@ -199,58 +199,22 @@ ${booking.discountCode && (booking.discountAmount || 0) > 0 ? `*Subtotal:* ₹${
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={handleDownloadSlip}
-              disabled={downloading}
-              className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60"
-            >
-              {downloaded ? (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Saved</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{downloading ? 'Saving...' : 'Download'}</span>
-                </>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print</span>
-            </button>
-            <a
-              href={buildSlipWhatsAppUrl()}
-              target="_blank"
-              rel="noreferrer"
-              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              <span>WhatsApp</span>
-            </a>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 cursor-pointer"
-              aria-label="Close Slip"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 cursor-pointer shrink-0"
+            aria-label="Close Slip"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* The Printable Slip Body with Changed Official Background */}
-        <div
-          id="booking-slip"
-          className={`relative p-5 sm:p-6 font-sans overflow-hidden ${slipContainerThemeClass}`}
-        >
+        {/* Scrollable Printable Slip Body */}
+        <div className="flex-1 overflow-y-auto">
+          <div
+            id="booking-slip"
+            className={`relative p-5 sm:p-6 font-sans overflow-hidden ${slipContainerThemeClass}`}
+          >
           {/* Subtle Diagonal Background Watermark */}
           <div
             aria-hidden="true"
@@ -542,6 +506,48 @@ ${booking.discountCode && (booking.discountAmount || 0) > 0 ? `*Subtotal:* ₹${
             </div>
           </div>
 
+          </div>
+        </div>
+
+        {/* Prominent Sticky Bottom Action Bar (no-print) */}
+        <div className="no-print px-4 sm:px-5 py-3 bg-neutral-950 border-t border-neutral-800 flex items-center gap-2 sm:gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={handleDownloadSlip}
+            disabled={downloading}
+            className="flex-1 py-2.5 px-3 sm:px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60 shadow-lg"
+          >
+            {downloaded ? (
+              <>
+                <Check className="w-4 h-4 shrink-0" />
+                <span>Saved / डाउनलोड हो गया</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 shrink-0" />
+                <span>{downloading ? 'Saving...' : 'Download Slip / डाउनलोड'}</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="py-2.5 px-3 sm:px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
+          >
+            <Printer className="w-4 h-4 shrink-0" />
+            <span>Print / प्रिंट</span>
+          </button>
+
+          <a
+            href={buildSlipWhatsAppUrl()}
+            target="_blank"
+            rel="noreferrer"
+            className="py-2.5 px-3 sm:px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors shrink-0"
+          >
+            <Share2 className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">WhatsApp</span>
+          </a>
         </div>
 
       </div>

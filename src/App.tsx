@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   BUSINESS_CONFIG, 
   DJ_RATE_PLANS, 
@@ -11,6 +11,7 @@ import {
   Booking, 
   DJRatePlan, 
   DiscountCode,
+  PriceCategoryMeta,
   StaffMember, 
   StaffDutyRecord, 
   StaffPaymentRecord, 
@@ -20,6 +21,7 @@ import {
   OfferBroadcast,
   CustomerNotification
 } from './types';
+import { PRICE_CATEGORIES } from './utils/rateCategories';
 import { evaluateDiscountCode } from './utils/discountUtils';
 import { calculateBookingReward, getCustomerRewardSummary } from './utils/rewardUtils';
 import {
@@ -69,10 +71,55 @@ export default function App() {
     return BUSINESS_CONFIG;
   });
 
+  // Price Categories (Owner can add/edit/delete; synced live to Customers)
+  const [categories, setCategories] = useState<PriceCategoryMeta[]>(() => {
+    const saved = localStorage.getItem('sk_sound_categories_v1');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch {
+        // fallback to default categories
+      }
+    }
+    return PRICE_CATEGORIES;
+  });
+
   // DJ Rate Plans (Owner can edit; Customer views live synced rates)
   const [ratePlans, setRatePlans] = useState<DJRatePlan[]>(() => {
     const saved = localStorage.getItem('sk_sound_rates_v5');
-    return saved ? JSON.parse(saved) : DJ_RATE_PLANS;
+    if (!saved) {
+      localStorage.setItem('sk_sound_rates_v6_seeded', '1');
+      return DJ_RATE_PLANS;
+    }
+    try {
+      const parsed: DJRatePlan[] = JSON.parse(saved);
+      const defaultsById = new Map(DJ_RATE_PLANS.map((p) => [p.id, p]));
+      // Backfill new bilingual/category metadata on existing defaults without touching owner prices/photos
+      const upgraded = parsed.map((item) => {
+        const def = defaultsById.get(item.id);
+        if (!def) return item;
+        return {
+          ...item,
+          category: !item.category || item.category === 'equipment' || item.category === 'event' ? def.category : item.category,
+          descriptionEn: item.descriptionEn || def.descriptionEn,
+          durationLabel: item.durationLabel || def.durationLabel,
+          unitLabel: item.unitLabel || def.unitLabel
+        };
+      });
+
+      if (!localStorage.getItem('sk_sound_rates_v6_seeded')) {
+        const existingIds = new Set(upgraded.map((i) => i.id));
+        const missingDefaults = DJ_RATE_PLANS.filter((d) => !existingIds.has(d.id));
+        localStorage.setItem('sk_sound_rates_v6_seeded', '1');
+        return [...upgraded, ...missingDefaults];
+      }
+      return upgraded;
+    } catch {
+      return DJ_RATE_PLANS;
+    }
   });
 
   // Bookings list with LocalStorage persistence
@@ -134,11 +181,121 @@ export default function App() {
   const [preselectedPlan, setPreselectedPlan] = useState<DJRatePlan | null>(null);
   const [preselectedCouponCode, setPreselectedCouponCode] = useState<string>('');
   const [openPaperSlipNonce, setOpenPaperSlipNonce] = useState(0);
+  const [exitToast, setExitToast] = useState(false);
+
+  const backPressedOnceRef = useRef(false);
+  const exitToastTimerRef = useRef<number | null>(null);
+  const backStateRef = useRef({
+    authSession,
+    selectedSlipBooking,
+    upiModalOpen,
+    bookingPopupOpen,
+    editingBooking,
+    customerTab,
+    activeSection
+  });
+
+  backStateRef.current = {
+    authSession,
+    selectedSlipBooking,
+    upiModalOpen,
+    bookingPopupOpen,
+    editingBooking,
+    customerTab,
+    activeSection
+  };
+
+  // Global Back Button Guard (prevents single Back press from closing entire app)
+  useEffect(() => {
+    if (!authSession) return;
+
+    if (!window.history.state?.skAppGuard) {
+      window.history.pushState({ skAppGuard: true }, '');
+    }
+
+    const handlePopState = () => {
+      const s = backStateRef.current;
+      if (!s.authSession) return;
+
+      // 1. Close open top-level modals first
+      if (s.selectedSlipBooking) {
+        setSelectedSlipBooking(null);
+        window.history.pushState({ skAppGuard: true }, '');
+        return;
+      }
+
+      if (s.upiModalOpen) {
+        setUpiModalOpen(false);
+        window.history.pushState({ skAppGuard: true }, '');
+        return;
+      }
+
+      if (s.bookingPopupOpen || s.editingBooking) {
+        setBookingPopupOpen(false);
+        setEditingBooking(null);
+        setPreselectedPlan(null);
+        setPreselectedCouponCode('');
+        window.history.pushState({ skAppGuard: true }, '');
+        return;
+      }
+
+      // 2. Ask child components (product zoom, owner edit/category modals) to close any open popup
+      const closeChildEvt = new CustomEvent('sk-close-child-modal', { cancelable: true });
+      const notCancelled = window.dispatchEvent(closeChildEvt);
+      if (!notCancelled) {
+        window.history.pushState({ skAppGuard: true }, '');
+        return;
+      }
+
+      // 3. Return from sub-tabs back to Home / Overview
+      if (s.authSession.role === 'customer' && s.customerTab !== 'overview') {
+        setCustomerTab('overview');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.history.pushState({ skAppGuard: true }, '');
+        return;
+      }
+
+      if (s.authSession.role === 'owner' && s.activeSection !== 'home') {
+        setActiveSection('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.history.pushState({ skAppGuard: true }, '');
+        return;
+      }
+
+      // 4. At root view: require double Back within 2.5s to exit app
+      if (!backPressedOnceRef.current) {
+        backPressedOnceRef.current = true;
+        setExitToast(true);
+        if (exitToastTimerRef.current) {
+          window.clearTimeout(exitToastTimerRef.current);
+        }
+        exitToastTimerRef.current = window.setTimeout(() => {
+          backPressedOnceRef.current = false;
+          setExitToast(false);
+          if (!window.history.state?.skAppGuard) {
+            window.history.pushState({ skAppGuard: true }, '');
+          }
+        }, 2500);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      if (exitToastTimerRef.current) {
+        window.clearTimeout(exitToastTimerRef.current);
+      }
+    };
+  }, [authSession]);
 
   // Sync to LocalStorage
   useEffect(() => {
     localStorage.setItem('sk_sound_business_v4', JSON.stringify(business));
   }, [business]);
+
+  useEffect(() => {
+    localStorage.setItem('sk_sound_categories_v1', JSON.stringify(categories));
+  }, [categories]);
 
   useEffect(() => {
     localStorage.setItem('sk_sound_rates_v5', JSON.stringify(ratePlans));
@@ -365,9 +522,13 @@ export default function App() {
     }
   };
 
-  // Rate plans update handler (Owner Only)
+  // Rate plans & categories update handlers (Owner Only)
   const handleUpdateRatePlans = (newPlans: DJRatePlan[]) => {
     setRatePlans(newPlans);
+  };
+
+  const handleUpdateCategories = (newCats: PriceCategoryMeta[]) => {
+    setCategories(newCats);
   };
 
   // Customer adds a new booking -> sends success WhatsApp notification to registered mobile & auto opens QR modal when payable amount > 0
@@ -819,6 +980,7 @@ export default function App() {
               myBookings={customerBookings}
               business={business}
               ratePlans={ratePlans}
+              categories={categories}
               discountCodes={discountCodes}
               latestOfferBroadcast={offerBroadcasts[0] || null}
               activeTab={customerTab}
@@ -840,6 +1002,7 @@ export default function App() {
             {customerTab === 'rates' && (
               <PricingPackages
                 ratePlans={ratePlans}
+                categories={categories}
                 onSelectPlanForBooking={(plan, openPaperSlip) =>
                   handleOpenBookingPopup({ plan, openPaperSlip })
                 }
@@ -919,10 +1082,12 @@ export default function App() {
               onBroadcastOfferToAll={handleBroadcastOfferToAll}
             />
 
-            {/* 1. Rate List Management for Owner (Edit, Add, Delete rates that sync live to customers) */}
+            {/* 1. Rate List & Category Management for Owner Only (Synced live to customers) */}
             <OwnerRateManager
               ratePlans={ratePlans}
+              categories={categories}
               onUpdateRatePlans={handleUpdateRatePlans}
+              onUpdateCategories={handleUpdateCategories}
             />
 
             {/* 2. Master Booking Ledger & UTR Verification */}
@@ -997,6 +1162,12 @@ export default function App() {
       />
 
       <OfflineIndicator />
+
+      {exitToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded-full bg-neutral-900 border border-amber-400/70 text-amber-300 text-xs font-bold shadow-2xl whitespace-nowrap animate-pulse">
+          ऐप बंद करने के लिए 1 बार और Back दबाएँ · Press Back again to exit
+        </div>
+      )}
 
     </div>
   );

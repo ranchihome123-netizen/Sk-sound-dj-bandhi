@@ -22,16 +22,34 @@ export type EventType =
   | 'roadshow'
   | 'other';
 
+export type DefaultRateCategory =
+  | 'dj'
+  | 'light'
+  | 'utensils'
+  | 'table_chair'
+  | 'clothes'
+  | 'equipment'
+  | 'event';
+
+export type RateCategory = DefaultRateCategory | (string & {});
+
+export interface PriceCategoryMeta {
+  key: string;
+  labelEn: string;
+  labelHi: string;
+}
+
 export interface DJRatePlan {
   id: string;
   nameHi: string;
   nameEn: string;
   descriptionHi: string;
+  descriptionEn?: string;
   durationLabel: string;
   unitLabel?: string; // e.g., 'Per Setup', 'Per Pc', 'Only Night', 'Owner Set'
   price: number; // 0 when isOwnerQuoted is true
   isOwnerQuoted?: boolean; // true for Wedding / Party (पैसा नहीं दिखेगा, मालिक तय करेंगे)
-  category?: 'equipment' | 'event';
+  category?: RateCategory;
   imageUrl?: string;
   popular?: boolean;
   recommendedFor: string;
