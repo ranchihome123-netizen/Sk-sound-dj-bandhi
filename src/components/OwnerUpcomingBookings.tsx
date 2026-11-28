@@ -16,6 +16,7 @@ import {
 interface OwnerUpcomingBookingsProps {
   bookings: Booking[];
   onViewSlip: (booking: Booking) => void;
+  onOpenAllBookings?: () => void;
 }
 
 const parseLocalDate = (dateStr: string): Date | null => {
@@ -27,7 +28,8 @@ const parseLocalDate = (dateStr: string): Date | null => {
 
 export const OwnerUpcomingBookings: React.FC<OwnerUpcomingBookingsProps> = ({
   bookings,
-  onViewSlip
+  onViewSlip,
+  onOpenAllBookings
 }) => {
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -113,12 +115,22 @@ export const OwnerUpcomingBookings: React.FC<OwnerUpcomingBookingsProps> = ({
             </p>
           </div>
 
-          <a
-            href="#booking"
-            className="px-4 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-amber-300 border border-neutral-700 text-xs font-semibold transition-colors whitespace-nowrap w-fit"
-          >
-            View All Bookings &rarr;
-          </a>
+          {onOpenAllBookings ? (
+            <button
+              type="button"
+              onClick={onOpenAllBookings}
+              className="px-4 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-amber-300 border border-neutral-700 text-xs font-semibold transition-colors whitespace-nowrap w-fit cursor-pointer"
+            >
+              View All Bookings &rarr;
+            </button>
+          ) : (
+            <a
+              href="#booking"
+              className="px-4 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-amber-300 border border-neutral-700 text-xs font-semibold transition-colors whitespace-nowrap w-fit"
+            >
+              View All Bookings &rarr;
+            </a>
+          )}
         </div>
 
         {/* Upcoming Cards Grid */}

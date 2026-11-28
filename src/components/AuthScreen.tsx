@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ConfirmationResult } from 'firebase/auth';
 import { CustomerUser, AuthSession, BusinessConfig } from '../types';
 import {
   Lock,
@@ -16,23 +15,15 @@ import {
   EyeOff,
   Camera,
   Upload,
-  X,
-  MessageSquareCode,
-  Loader2
+  X
 } from 'lucide-react';
 import { DJLogo } from './DJLogo';
 import { PWAInstallButton } from './PWAInstallButton';
-import { saveVerifiedCustomerProfile } from '../firebase';
-import {
-  clearRecaptchaVerifier,
-  formatE164Phone,
-  mapPhoneOtpErrorMessage,
-  normalizeTenDigitMobile,
-  sendRealPhoneOtp,
-  verifyRealPhoneOtp
-} from '../utils/phoneOtpAuth';
 
-const RECAPTCHA_CONTAINER_ID = 'recaptcha-container-customer-auth';
+const normalizeTenDigitMobile = (raw: string): string => {
+  const digits = raw.replace(/\D/g, '');
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+};
 
 interface AuthScreenProps {
   business: BusinessConfig;
@@ -52,8 +43,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const [activeRoleTab, setActiveRoleTab] = useState<'customer' | 'owner'>('customer');
   const [customerView, setCustomerView] = useState<'login' | 'register' | 'forgot_password'>('login');
 
-  // Owner credentials
+  // Owner credentials (username & password both masked by default)
   const [ownerUsername, setOwnerUsername] = useState('owner');
+  const [showOwnerUsername, setShowOwnerUsername] = useState(false);
   const [ownerPassword, setOwnerPassword] = useState('');
   const [showOwnerPassword, setShowOwnerPassword] = useState(false);
 
@@ -62,30 +54,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const [customerPassword, setCustomerPassword] = useState('');
   const [showCustomerPassword, setShowCustomerPassword] = useState(false);
 
-  // Registration credentials + Real SMS OTP state
+  // Registration credentials
   const [regName, setRegName] = useState('');
   const [regMobile, setRegMobile] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regPhoto, setRegPhoto] = useState('');
-  const [regOtp, setRegOtp] = useState('');
-  const [regOtpSent, setRegOtpSent] = useState(false);
-  const [regOtpVerified, setRegOtpVerified] = useState(false);
-  const [regVerifiedUid, setRegVerifiedUid] = useState('');
-  const [regSendingOtp, setRegSendingOtp] = useState(false);
-  const [regVerifyingOtp, setRegVerifyingOtp] = useState(false);
-  const [regResendSec, setRegResendSec] = useState(0);
-  const regConfirmationRef = useRef<ConfirmationResult | null>(null);
 
-  // Forgot password + Real SMS OTP state
+  // Forgot password state
   const [forgotMobile, setForgotMobile] = useState('');
-  const [forgotOtp, setForgotOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [forgotSendingOtp, setForgotSendingOtp] = useState(false);
-  const [forgotVerifyingOtp, setForgotVerifyingOtp] = useState(false);
-  const [forgotResendSec, setForgotResendSec] = useState(0);
   const [newPassword, setNewPassword] = useState('');
-  const forgotConfirmationRef = useRef<ConfirmationResult | null>(null);
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   // Feedback
   const [errorMsg, setErrorMsg] = useState('');
@@ -98,9 +77,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   authBackStateRef.current = { activeRoleTab, customerView };
 
   useEffect(() => {
-    if (!window.history.state?.skAuthGuard) {
-      window.history.pushState({ skAuthGuard: true }, '');
-    }
+    const armAuthGuard = () => {
+      if (!window.history.state?.skAuthGuard) {
+        window.history.pushState({ skAuthGuard: true }, '');
+      }
+    };
+
+    armAuthGuard();
+
+    const handleUserGesture = () => {
+      if (!backPressedOnceRef.current) {
+        armAuthGuard();
+      }
+    };
 
     const handlePopState = () => {
       const state = authBackStateRef.current;
@@ -130,34 +119,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         exitToastTimerRef.current = window.setTimeout(() => {
           backPressedOnceRef.current = false;
           setExitToast(false);
-          if (!window.history.state?.skAuthGuard) {
-            window.history.pushState({ skAuthGuard: true }, '');
-          }
+          armAuthGuard();
         }, 2500);
       }
     };
 
+    window.addEventListener('pointerdown', handleUserGesture, { passive: true });
+    window.addEventListener('keydown', handleUserGesture, { passive: true });
     window.addEventListener('popstate', handlePopState);
     return () => {
+      window.removeEventListener('pointerdown', handleUserGesture);
+      window.removeEventListener('keydown', handleUserGesture);
       window.removeEventListener('popstate', handlePopState);
       if (exitToastTimerRef.current) {
         window.clearTimeout(exitToastTimerRef.current);
       }
-      clearRecaptchaVerifier(RECAPTCHA_CONTAINER_ID);
     };
   }, []);
-
-  useEffect(() => {
-    if (regResendSec <= 0) return;
-    const t = setTimeout(() => setRegResendSec((s) => Math.max(0, s - 1)), 1000);
-    return () => clearTimeout(t);
-  }, [regResendSec]);
-
-  useEffect(() => {
-    if (forgotResendSec <= 0) return;
-    const t = setTimeout(() => setForgotResendSec((s) => Math.max(0, s - 1)), 1000);
-    return () => clearTimeout(t);
-  }, [forgotResendSec]);
 
   // Owner Login Submit (Strictly verifies credentials, password is hidden)
   const handleOwnerSubmit = (e: React.FormEvent) => {
@@ -243,62 +221,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // Send Real SMS OTP for Customer Registration
-  const handleSendRegOtp = async () => {
-    setErrorMsg('');
-    setSuccessMsg('');
-
-    const e164 = formatE164Phone(regMobile);
-    if (!e164) {
-      setErrorMsg('Kripya sahi 10-digit mobile number daalein (e.g. 9876543210).');
-      return;
-    }
-
-    const cleanTen = normalizeTenDigitMobile(regMobile);
-    if (customerList.some((c) => normalizeTenDigitMobile(c.mobile) === cleanTen)) {
-      setErrorMsg('Yeh mobile number pehle se registered hai. Kripya Sign In karein.');
-      return;
-    }
-
-    setRegSendingOtp(true);
-    try {
-      const confirmation = await sendRealPhoneOtp(e164, RECAPTCHA_CONTAINER_ID);
-      regConfirmationRef.current = confirmation;
-      setRegOtpSent(true);
-      setRegOtpVerified(false);
-      setRegOtp('');
-      setRegResendSec(60);
-      setSuccessMsg(`${e164} par Real SMS OTP bhej diya gaya hai. Kripya 6-digit OTP daalein.`);
-    } catch (err) {
-      setErrorMsg(mapPhoneOtpErrorMessage(err));
-    } finally {
-      setRegSendingOtp(false);
-    }
-  };
-
-  // Verify Real SMS OTP for Customer Registration
-  const handleVerifyRegOtp = async () => {
-    setErrorMsg('');
-    setSuccessMsg('');
-    if (!regConfirmationRef.current) {
-      setErrorMsg('Pehle "Send OTP" par click karke SMS OTP mangwayein.');
-      return;
-    }
-    setRegVerifyingOtp(true);
-    try {
-      const verified = await verifyRealPhoneOtp(regConfirmationRef.current, regOtp);
-      setRegOtpVerified(true);
-      setRegVerifiedUid(verified.uid);
-      setSuccessMsg('Mobile number Real SMS OTP se verify ho gaya!');
-    } catch (err) {
-      setErrorMsg(mapPhoneOtpErrorMessage(err));
-    } finally {
-      setRegVerifyingOtp(false);
-    }
-  };
-
-  // Customer Registration Submit
-  const handleCustomerRegister = async (e: React.FormEvent) => {
+  // Customer Registration Submit (Direct, No OTP)
+  const handleCustomerRegister = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     if (!regPhoto) {
@@ -325,40 +249,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       return;
     }
 
-    let verifiedUid = regVerifiedUid;
-    if (!regOtpVerified) {
-      if (!regOtpSent || !regConfirmationRef.current) {
-        setErrorMsg('Pehle apne mobile number par Real SMS OTP bhejkar verify karein.');
-        return;
-      }
-      if (!/^\d{6}$/.test(regOtp.trim())) {
-        setErrorMsg('Kripya mobile par aaya 6-digit SMS OTP daalein.');
-        return;
-      }
-      setRegVerifyingOtp(true);
-      try {
-        const verified = await verifyRealPhoneOtp(regConfirmationRef.current, regOtp);
-        verifiedUid = verified.uid;
-        setRegOtpVerified(true);
-        setRegVerifiedUid(verified.uid);
-      } catch (err) {
-        setErrorMsg(mapPhoneOtpErrorMessage(err));
-        setRegVerifyingOtp(false);
-        return;
-      }
-      setRegVerifyingOtp(false);
-    }
-
-    if (verifiedUid) {
-      await saveVerifiedCustomerProfile({
-        uid: verifiedUid,
-        name: regName.trim(),
-        phone: formatE164Phone(regMobile) || `+91${cleanMobile}`
-      });
-    }
-
     const newCust: CustomerUser = {
-      id: verifiedUid || 'cust_' + Date.now(),
+      id: 'cust_' + Date.now(),
       name: regName.trim(),
       mobile: cleanMobile,
       password: regPassword,
@@ -367,7 +259,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     };
 
     onRegisterCustomer(newCust);
-    setSuccessMsg('OTP Verified & Account created successfully! Logging you in...');
+    setSuccessMsg('Account created successfully! Logging you in...');
     setTimeout(() => {
       onLoginSuccess({
         role: 'customer',
@@ -379,76 +271,48 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           roleLabel: 'Customer'
         }
       });
-    }, 900);
+    }, 700);
   };
 
-  // Send Real SMS OTP for Forgot Password
-  const handleSendOtp = async () => {
+  // Direct Reset Password (No OTP)
+  const handleResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
-    const e164 = formatE164Phone(forgotMobile);
-    if (!e164) {
+
+    const cleanTen = normalizeTenDigitMobile(forgotMobile);
+    if (cleanTen.length !== 10) {
       setErrorMsg('Please enter a valid 10-digit mobile number.');
       return;
     }
-    const cleanTen = normalizeTenDigitMobile(forgotMobile);
-    const customer = customerList.find((c) => normalizeTenDigitMobile(c.mobile) === cleanTen);
-    if (!customer) {
+
+    const matchedCustomer = customerList.find((c) => normalizeTenDigitMobile(c.mobile) === cleanTen);
+    if (!matchedCustomer) {
       setErrorMsg('Mobile number not found in customer records.');
       return;
     }
 
-    setForgotSendingOtp(true);
-    try {
-      const confirmation = await sendRealPhoneOtp(e164, RECAPTCHA_CONTAINER_ID);
-      forgotConfirmationRef.current = confirmation;
-      setOtpSent(true);
-      setForgotOtp('');
-      setForgotResendSec(60);
-      setSuccessMsg(`${e164} par Real SMS OTP bhej diya gaya hai.`);
-    } catch (err) {
-      setErrorMsg(mapPhoneOtpErrorMessage(err));
-    } finally {
-      setForgotSendingOtp(false);
-    }
-  };
-
-  // Reset Password after Real OTP Verification
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-    if (!otpSent || !forgotConfirmationRef.current) {
-      setErrorMsg('Pehle "Send OTP" par click karke Real SMS OTP mangwayein.');
-      return;
-    }
     if (!newPassword || newPassword.length < 3) {
       setErrorMsg('Password must be at least 3 characters long.');
       return;
     }
 
-    setForgotVerifyingOtp(true);
-    try {
-      await verifyRealPhoneOtp(forgotConfirmationRef.current, forgotOtp);
-    } catch (err) {
-      setErrorMsg(mapPhoneOtpErrorMessage(err));
-      setForgotVerifyingOtp(false);
+    if (confirmNewPassword && newPassword !== confirmNewPassword) {
+      setErrorMsg('Passwords do not match.');
       return;
     }
-    setForgotVerifyingOtp(false);
 
-    const cleanTen = normalizeTenDigitMobile(forgotMobile);
-    const matchedCustomer = customerList.find((c) => normalizeTenDigitMobile(c.mobile) === cleanTen);
-    const ok = onResetCustomerPassword(matchedCustomer ? matchedCustomer.mobile : forgotMobile.trim(), newPassword);
+    const ok = onResetCustomerPassword(matchedCustomer.mobile, newPassword);
     if (ok) {
-      setSuccessMsg('OTP verified & password changed successfully! You can now log in.');
+      setSuccessMsg('Password changed successfully! You can now sign in.');
       setTimeout(() => {
         setCustomerView('login');
         setCustomerMobile(cleanTen);
         setCustomerPassword(newPassword);
-        setOtpSent(false);
-        setForgotOtp('');
+        setNewPassword('');
+        setConfirmNewPassword('');
         setSuccessMsg('');
-      }, 1400);
+      }, 1100);
     }
   };
 
@@ -753,103 +617,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
                     <div>
                       <label className="block text-xs font-semibold text-neutral-300 mb-1">
-                        Mobile Number (Real SMS OTP Verification) *
+                        Mobile Number *
                       </label>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono text-amber-400 font-bold">
-                            +91
-                          </span>
-                          <input
-                            type="tel"
-                            required
-                            value={regMobile}
-                            onChange={(e) => {
-                              setRegMobile(e.target.value);
-                              if (regOtpSent || regOtpVerified) {
-                                setRegOtpSent(false);
-                                setRegOtpVerified(false);
-                                setRegVerifiedUid('');
-                                setRegOtp('');
-                                regConfirmationRef.current = null;
-                              }
-                            }}
-                            placeholder="10-digit mobile number"
-                            className="w-full pl-11 pr-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-amber-400"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleSendRegOtp}
-                          disabled={regSendingOtp || regResendSec > 0}
-                          className="px-3 py-2 bg-amber-400 hover:bg-amber-300 disabled:bg-neutral-800 disabled:text-neutral-400 text-black font-bold text-xs rounded-lg cursor-pointer whitespace-nowrap flex items-center gap-1.5 transition-colors"
-                        >
-                          {regSendingOtp ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              <span>Sending...</span>
-                            </>
-                          ) : regResendSec > 0 ? (
-                            <span>Resend ({regResendSec}s)</span>
-                          ) : (
-                            <span>{regOtpSent ? 'Resend OTP' : 'Send OTP'}</span>
-                          )}
-                        </button>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono text-amber-400 font-bold">
+                          +91
+                        </span>
+                        <input
+                          type="tel"
+                          required
+                          value={regMobile}
+                          onChange={(e) => setRegMobile(e.target.value)}
+                          placeholder="10-digit mobile number"
+                          className="w-full pl-11 pr-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-amber-400"
+                        />
                       </div>
                     </div>
-
-                    {/* Real 6-Digit SMS OTP Verification Box */}
-                    {regOtpSent && (
-                      <div
-                        className={`p-3 rounded-xl border space-y-2 ${
-                          regOtpVerified
-                            ? 'bg-emerald-950/50 border-emerald-700'
-                            : 'bg-neutral-950 border-amber-500/40'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                            <MessageSquareCode className="w-3.5 h-3.5" />
-                            <span>Enter 6-Digit SMS OTP *</span>
-                          </label>
-                          {regOtpVerified && (
-                            <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              Verified
-                            </span>
-                          )}
-                        </div>
-
-                        {!regOtpVerified && (
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              maxLength={6}
-                              value={regOtp}
-                              onChange={(e) => setRegOtp(e.target.value.replace(/\D/g, ''))}
-                              placeholder="6-digit OTP"
-                              className="flex-1 px-3 py-2 bg-neutral-900 border border-neutral-700 rounded-lg text-sm font-mono tracking-[0.25em] text-center text-amber-300 focus:outline-none focus:border-amber-400"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleVerifyRegOtp}
-                              disabled={regVerifyingOtp || regOtp.length < 6}
-                              className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:bg-neutral-800 disabled:text-neutral-500 text-black font-bold text-xs rounded-lg cursor-pointer whitespace-nowrap flex items-center gap-1.5"
-                            >
-                              {regVerifyingOtp ? (
-                                <>
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  <span>Checking...</span>
-                                </>
-                              ) : (
-                                <span>Verify OTP</span>
-                              )}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
 
                     <div>
                       <label className="block text-xs font-semibold text-neutral-300 mb-1">
@@ -881,14 +664,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
                     <button
                       type="submit"
-                      disabled={regVerifyingOtp || regSendingOtp}
-                      className="w-full py-2.5 px-4 bg-amber-400 hover:bg-amber-300 disabled:opacity-60 text-black font-bold text-xs rounded-lg transition-colors cursor-pointer shadow mt-2"
+                      className="w-full py-2.5 px-4 bg-amber-400 hover:bg-amber-300 text-black font-bold text-xs rounded-lg transition-colors cursor-pointer shadow mt-2"
                     >
-                      {regOtpVerified
-                        ? 'Register & Sign In'
-                        : regOtpSent
-                        ? 'Verify OTP & Register'
-                        : 'Verify Mobile with OTP & Register'}
+                      Register & Sign In
                     </button>
 
                     <div className="pt-2 text-center">
@@ -903,16 +681,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   </form>
                 )}
 
-                {/* 3. Forgot Password */}
+                {/* 3. Forgot Password (Direct Reset, No OTP) */}
                 {customerView === 'forgot_password' && (
                   <form onSubmit={handleResetPassword} className="space-y-3.5">
                     <div>
                       <h3 className="text-base font-bold text-white flex items-center gap-1.5">
                         <KeyRound className="w-4 h-4 text-amber-400" />
-                        <span>Reset Password with Real SMS OTP</span>
+                        <span>Reset Password</span>
                       </h3>
                       <p className="text-xs text-neutral-400 mt-0.5">
-                        Enter your registered mobile number, receive SMS OTP and set your new password.
+                        Enter your registered mobile number and set a new password.
                       </p>
                     </div>
 
@@ -920,83 +698,50 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                       <label className="block text-xs font-semibold text-neutral-300 mb-1">
                         Registered Mobile Number *
                       </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="tel"
-                          required
-                          value={forgotMobile}
-                          onChange={(e) => {
-                            setForgotMobile(e.target.value);
-                            if (otpSent) {
-                              setOtpSent(false);
-                              setForgotOtp('');
-                              forgotConfirmationRef.current = null;
-                            }
-                          }}
-                          placeholder="10-digit mobile number"
-                          className="flex-1 px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-amber-400"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleSendOtp}
-                          disabled={forgotSendingOtp || forgotResendSec > 0}
-                          className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-60 text-amber-400 font-semibold text-xs rounded-lg border border-neutral-700 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
-                        >
-                          {forgotSendingOtp ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              <span>Sending...</span>
-                            </>
-                          ) : forgotResendSec > 0 ? (
-                            <span>Resend ({forgotResendSec}s)</span>
-                          ) : (
-                            <span>{otpSent ? 'Resend OTP' : 'Send OTP'}</span>
-                          )}
-                        </button>
-                      </div>
+                      <input
+                        type="tel"
+                        required
+                        value={forgotMobile}
+                        onChange={(e) => setForgotMobile(e.target.value)}
+                        placeholder="10-digit mobile number"
+                        className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-amber-400"
+                      />
                     </div>
 
-                    {otpSent && (
-                      <>
-                        <div>
-                          <label className="block text-xs font-semibold text-neutral-300 mb-1">
-                            Enter 6-Digit SMS OTP Code *
-                          </label>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            required
-                            maxLength={6}
-                            value={forgotOtp}
-                            onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, ''))}
-                            placeholder="6-digit SMS code"
-                            className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm font-mono tracking-[0.25em] text-center text-amber-300 focus:outline-none focus:border-amber-400"
-                          />
-                        </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                        New Password *
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                        className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-amber-400"
+                      />
+                    </div>
 
-                        <div>
-                          <label className="block text-xs font-semibold text-neutral-300 mb-1">
-                            New Password *
-                          </label>
-                          <input
-                            type="password"
-                            required
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="Enter new password"
-                            className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-amber-400"
-                          />
-                        </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-300 mb-1">
+                        Confirm New Password *
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        placeholder="Re-enter new password"
+                        className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm font-mono text-white focus:outline-none focus:border-amber-400"
+                      />
+                    </div>
 
-                        <button
-                          type="submit"
-                          disabled={forgotVerifyingOtp}
-                          className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-black font-bold text-xs rounded-lg transition-colors cursor-pointer shadow mt-2"
-                        >
-                          {forgotVerifyingOtp ? 'Verifying OTP...' : 'Verify OTP & Save New Password'}
-                        </button>
-                      </>
-                    )}
+                    <button
+                      type="submit"
+                      className="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-lg transition-colors cursor-pointer shadow mt-2"
+                    >
+                      Save New Password
+                    </button>
 
                     <div className="pt-2 text-center">
                       <button
@@ -1009,9 +754,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     </div>
                   </form>
                 )}
-
-                {/* Invisible Firebase Phone Auth reCAPTCHA Mount Point */}
-                <div id={RECAPTCHA_CONTAINER_ID} />
               </>
             )}
 
@@ -1030,18 +772,27 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
                 <div>
                   <label className="block text-xs font-semibold text-neutral-300 mb-1">
-                    Username
+                    Owner Username (Hidden)
                   </label>
                   <div className="relative">
                     <User className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
-                      type="text"
+                      type={showOwnerUsername ? 'text' : 'password'}
                       required
+                      autoComplete="off"
                       value={ownerUsername}
                       onChange={(e) => setOwnerUsername(e.target.value)}
-                      placeholder="Enter owner username"
-                      className="w-full pl-9 pr-3 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm text-white font-mono focus:outline-none focus:border-amber-400"
+                      placeholder="•••••"
+                      className="w-full pl-9 pr-10 py-2 bg-neutral-950 border border-neutral-800 rounded-lg text-sm text-white font-mono focus:outline-none focus:border-amber-400"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowOwnerUsername(!showOwnerUsername)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white cursor-pointer"
+                      title={showOwnerUsername ? 'Hide username' : 'Show username'}
+                    >
+                      {showOwnerUsername ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Booking, BookingItem, DiscountCode, EventDuration, EventType, UserRole, DJRatePlan } from '../types';
+import { Booking, BookingItem, DiscountCode, EventDuration, EventType, PriceCategoryMeta, UserRole, DJRatePlan } from '../types';
 import { 
   Calendar, 
   MapPin, 
@@ -22,10 +22,21 @@ import {
   Gift,
   XCircle,
   Mic,
-  MicOff
+  MicOff,
+  Music2,
+  Lightbulb,
+  Utensils,
+  Armchair,
+  Shirt
 } from 'lucide-react';
 import { RATE_PLAN_IMAGES } from '../data/initialData';
 import { parseVoiceBookingCommand } from '../utils/voiceBookingParser';
+import {
+  PRICE_CATEGORIES,
+  PriceCategoryKey,
+  getCategoryLabel,
+  resolveRateCategory
+} from '../utils/rateCategories';
 import { DateRangeCalendarModal, getMinBookableDateStr, isBookableDate } from './DateRangeCalendarModal';
 import { evaluateDiscountCode } from '../utils/discountUtils';
 import { canCustomerEditBooking, buildCustomerEditSummary } from '../utils/bookingUtils';
@@ -43,6 +54,7 @@ interface CustomerBookingProps {
   currentUserMobile?: string;
   rewardPercent?: number;
   ratePlans?: DJRatePlan[];
+  categories?: PriceCategoryMeta[];
   discountCodes?: DiscountCode[];
   editingBooking?: Booking | null;
   isModalOpen?: boolean;
@@ -70,6 +82,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
   currentUserMobile = '',
   rewardPercent = 5,
   ratePlans = [],
+  categories = PRICE_CATEGORIES,
   discountCodes = [],
   editingBooking = null,
   isModalOpen = false,
@@ -88,6 +101,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
   onViewSlip
 }) => {
   const [internalModalOpen, setInternalModalOpen] = useState(false);
+  const [bookingCategory, setBookingCategory] = useState<PriceCategoryKey>(categories[0]?.key || 'dj');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'confirmed' | 'utr_submitted' | 'pending_payment' | 'quote_pending' | 'cancelled'>('all');
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
@@ -134,6 +148,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
   const [requirementItemsText, setRequirementItemsText] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const paperSlipSectionRef = useRef<HTMLDivElement>(null);
+  const formBodyRef = useRef<HTMLDivElement>(null);
 
   // Voice Mic state
   const [isListening, setIsListening] = useState(false);
@@ -185,6 +200,27 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
     }
   };
 
+  useEffect(() => {
+    const handleBackClose = (e: Event) => {
+      if (viewingPhotoUrl) {
+        e.preventDefault();
+        setViewingPhotoUrl(null);
+        return;
+      }
+      if (calendarModalOpen) {
+        e.preventDefault();
+        setCalendarModalOpen(false);
+        return;
+      }
+      if (internalModalOpen) {
+        e.preventDefault();
+        closeBookingPopup();
+      }
+    };
+    window.addEventListener('sk-close-child-modal', handleBackClose);
+    return () => window.removeEventListener('sk-close-child-modal', handleBackClose);
+  }, [viewingPhotoUrl, calendarModalOpen, internalModalOpen]);
+
   const resetFormToBlank = () => {
     setCustomerName(currentUserName || '');
     setCustomerPhone(currentUserMobile || '');
@@ -210,19 +246,19 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
     if (!isModalOpen || editingBooking) return;
 
     if (preselectedPlan) {
-      if (preselectedPlan.id === 'rate_wedding') {
-        setEventType('wedding');
-      } else if (preselectedPlan.id === 'rate_party') {
-        setEventType('party');
-      } else if (preselectedPlan.id === 'rate_birthday') {
-        setEventType('birthday');
+      if (preselectedPlan.isOwnerQuoted) {
+        if (preselectedPlan.id === 'rate_wedding') setEventType('wedding');
+        else if (preselectedPlan.id === 'rate_party') setEventType('party');
       } else {
         setEventType('custom_items');
+        setBookingCategory(resolveRateCategory(preselectedPlan, categories));
         setItemQuantities((prev) => ({
           ...prev,
           [preselectedPlan.id]: Math.max(1, prev[preselectedPlan.id] || 0)
         }));
       }
+    } else {
+      setEventType('custom_items');
     }
 
     if (preselectedCouponCode) {
@@ -230,7 +266,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
       setAppliedDiscountCode(preselectedCouponCode.toUpperCase());
       setDiscountError('');
     }
-  }, [isModalOpen, preselectedPlan, preselectedCouponCode, editingBooking]);
+  }, [isModalOpen, preselectedPlan, preselectedCouponCode, editingBooking, categories]);
 
   useEffect(() => {
     if (openPaperSlipNonce > 0 && modalVisible) {
@@ -276,12 +312,36 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
     setItemQuantities(nextQtyMap);
   }, [editingBooking]);
 
-  // Filter equipment plans
+  // Filter equipment plans across all categories (DJ, Light, Utensils, Table-Chair, Clothes, Custom)
   const equipmentPlans = ratePlans.filter(
-    (p) => !p.isOwnerQuoted && p.category !== 'event' && p.id !== 'rate_birthday'
+    (p) => !p.isOwnerQuoted && p.category !== 'event'
   );
   const birthdayPlan = ratePlans.find((p) => p.id === 'rate_birthday');
   const birthdayPrice = birthdayPlan ? birthdayPlan.price : 6000;
+
+  const activeBookingCategoryKey = categories.some((c) => c.key === bookingCategory)
+    ? bookingCategory
+    : (categories[0]?.key || 'dj');
+
+  const categoryEquipmentPlans = equipmentPlans.filter(
+    (plan) => resolveRateCategory(plan, categories) === activeBookingCategoryKey
+  );
+
+  const getBookingCategoryIcon = (cat: PriceCategoryKey, className = 'w-4 h-4 text-amber-400') => {
+    switch (cat) {
+      case 'light':
+        return <Lightbulb className={className} />;
+      case 'utensils':
+        return <Utensils className={className} />;
+      case 'table_chair':
+        return <Armchair className={className} />;
+      case 'clothes':
+        return <Shirt className={className} />;
+      case 'dj':
+      default:
+        return <Music2 className={className} />;
+    }
+  };
 
   const isCustomPhoto = !!requirementPhoto;
   const isOwnerQuotedEvent = eventType === 'wedding' || eventType === 'party' || isCustomPhoto;
@@ -548,26 +608,35 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
     }
   };
 
+  const showFormErrorAndScroll = (msg: string) => {
+    setFormError(msg);
+    formBodyRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
-    if (!customerName.trim() || !customerPhone.trim() || !eventDate) {
-      setFormError('कृपया नाम, मोबाइल नंबर और कैलेंडर से तारीख (कब से कब तक) चुनें।');
+    if (!customerName.trim() || !customerPhone.trim() || !eventDate || !location.trim()) {
+      showFormErrorAndScroll(
+        !eventDate
+          ? 'कृपया कैलेंडर बटन दबाकर कार्यक्रम की तारीख (Event Date) चुनें।'
+          : 'कृपया नाम, मोबाइल नंबर, पता और तारीख (कब से कब तक) भरें।'
+      );
       return;
     }
 
     const minBookable = getMinBookableDateStr();
     const dateChangedWhileEditing = editingBooking && eventDate !== editingBooking.eventDate;
     if ((!editingBooking || dateChangedWhileEditing) && !isBookableDate(eventDate)) {
-      setFormError(
+      showFormErrorAndScroll(
         `पिछली या आज की तारीख की बुकिंग नहीं हो सकती। कृपया कल (${minBookable}) या उसके बाद की तारीख चुनें।`
       );
       return;
     }
 
     if (!isOwnerQuotedEvent && calculatedTotal <= 0) {
-      setFormError('कृपया कम से कम 1 सामान (Pcs) या Birthday Party चुनें।');
+      showFormErrorAndScroll('कृपया कम से कम 1 सामान (Pcs) चुनें या कॉपी पर्ची फोटो अपलोड करें।');
       return;
     }
 
@@ -1108,6 +1177,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
           onClick={closeBookingPopup}
         >
           <form
+            noValidate
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl bg-neutral-950 text-neutral-100 border border-neutral-800 shadow-2xl overflow-hidden"
@@ -1131,7 +1201,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
             </div>
 
             {/* Focused Form Content */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            <div ref={formBodyRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               {formError && (
                 <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-700/60 text-rose-200 text-xs font-semibold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
@@ -1145,7 +1215,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                   01. Customer & Event Details
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-xs font-bold text-neutral-300 mb-1">
                       Customer Full Name *
@@ -1202,22 +1272,6 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-neutral-300 mb-1">
-                      Booking Type *
-                    </label>
-                    <select
-                      value={eventType}
-                      onChange={(e) => setEventType(e.target.value as EventType)}
-                      className="w-full px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-sm text-white focus:outline-none focus:border-amber-400"
-                    >
-                      <option value="custom_items">Equipment Items (Pcs)</option>
-                      <option value="birthday">Birthday Party (₹{birthdayPrice.toLocaleString('en-IN')})</option>
-                      <option value="wedding">Wedding (Owner Rate)</option>
-                      <option value="party">Party / Function (Owner Rate)</option>
-                    </select>
-                  </div>
-
-                  <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-neutral-300 mb-1">
                       Event Location *
                     </label>
@@ -1278,87 +1332,230 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                 )}
               </div>
 
-              {/* 02. Equipment Items (Only for itemized / birthday bookings) */}
-              {!isOwnerQuotedEvent && (
-                <div className="p-4 sm:p-5 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-sm space-y-3">
+              {/* 02. Category-Wise Item Selection (DJ & Sound, Light, Utensils, Table-Chair, Clothes) */}
+              {!isOwnerQuotedEvent ? (
+                <div className="p-4 sm:p-5 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-sm space-y-3.5">
                   <div className="flex items-center justify-between gap-2 border-b border-neutral-800 pb-2">
                     <div className="flex items-center gap-2 text-xs font-extrabold text-amber-400 uppercase tracking-wide">
                       <Layers className="w-4 h-4 text-amber-400" />
-                      <span>02. Select Equipment (Pcs)</span>
+                      <span>02. Select Items by Category / कैटेगरी चुनें</span>
                     </div>
                     <span className="text-xs font-mono font-extrabold text-emerald-400 tabular-nums">
                       ₹{calculatedTotal.toLocaleString('en-IN')}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                    {equipmentPlans.map((plan) => {
-                      const qty = itemQuantities[plan.id] || 0;
-                      const itemImg =
-                        plan.imageUrl !== undefined
-                          ? (plan.imageUrl || undefined)
-                          : RATE_PLAN_IMAGES[plan.id];
+                  {/* Large Clickable Bilingual Category Cards (No 'All') */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                    {categories.map((cat) => {
+                      const catPlans = equipmentPlans.filter(
+                        (p) => resolveRateCategory(p, categories) === cat.key
+                      );
+                      const selectedQtyInCat = catPlans.reduce(
+                        (sum, p) => sum + (itemQuantities[p.id] || 0),
+                        0
+                      );
+                      const active = activeBookingCategoryKey === cat.key;
                       return (
-                        <div
-                          key={plan.id}
-                          className={`p-2.5 rounded-xl border transition-all flex flex-col justify-between gap-2 ${
-                            qty > 0
-                              ? 'bg-amber-500/10 border-amber-400/70'
-                              : 'bg-neutral-950 border-neutral-800'
+                        <button
+                          key={cat.key}
+                          type="button"
+                          onClick={() => setBookingCategory(cat.key)}
+                          className={`p-3 rounded-xl border text-left flex flex-col justify-between gap-1.5 cursor-pointer transition-all ${
+                            active
+                              ? 'bg-amber-400 text-black border-amber-300 shadow-md ring-2 ring-amber-400/40'
+                              : 'bg-neutral-950 text-white border-neutral-800 hover:border-amber-500/50'
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              {itemImg && (
-                                <img
-                                  src={itemImg}
-                                  alt={plan.nameEn || plan.nameHi}
-                                  referrerPolicy="no-referrer"
-                                  className="w-9 h-9 rounded-lg object-cover border border-neutral-700 shrink-0"
-                                />
+                          <div className="flex items-center justify-between gap-1">
+                            <div
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                active
+                                  ? 'bg-black/15 text-black'
+                                  : 'bg-amber-400/10 border border-amber-400/30 text-amber-400'
+                              }`}
+                            >
+                              {getBookingCategoryIcon(
+                                cat.key,
+                                `w-4 h-4 ${active ? 'text-black' : 'text-amber-400'}`
                               )}
-                              <div className="min-w-0">
-                                <div className="text-xs font-bold text-white truncate">
-                                  {plan.nameEn || plan.nameHi}
-                                </div>
-                                <div className="text-[11px] font-mono text-amber-400 font-bold tabular-nums">
-                                  ₹{plan.price.toLocaleString('en-IN')} / {plan.unitLabel || 'pc'}
-                                </div>
-                              </div>
                             </div>
+                            {selectedQtyInCat > 0 ? (
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold font-mono ${
+                                  active
+                                    ? 'bg-black text-amber-300'
+                                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                }`}
+                              >
+                                {selectedQtyInCat} Added
+                              </span>
+                            ) : (
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-mono ${
+                                  active ? 'bg-black/15 text-black' : 'bg-neutral-900 text-neutral-400'
+                                }`}
+                              >
+                                {catPlans.length}
+                              </span>
+                            )}
                           </div>
 
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-medium text-neutral-400">Qty:</span>
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => updateItemQty(plan.id, -1)}
-                                className="w-7 h-7 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white flex items-center justify-center cursor-pointer"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <input
-                                type="number"
-                                min={0}
-                                value={qty}
-                                onChange={(e) => setExactItemQty(plan.id, parseInt(e.target.value, 10))}
-                                className="w-12 text-center py-0.5 bg-neutral-900 border border-neutral-700 rounded-lg text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 tabular-nums"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => updateItemQty(plan.id, 1)}
-                                className="w-7 h-7 rounded-lg bg-amber-400 hover:bg-amber-300 text-black flex items-center justify-center cursor-pointer font-bold"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
+                          <div className="min-w-0">
+                            <div
+                              className={`text-xs font-extrabold leading-tight truncate ${
+                                active ? 'text-black' : 'text-white'
+                              }`}
+                            >
+                              {cat.labelEn}
                             </div>
+                            {cat.labelHi && cat.labelHi !== cat.labelEn && (
+                              <div
+                                className={`text-[11px] font-bold truncate ${
+                                  active ? 'text-neutral-900' : 'text-amber-300/90'
+                                }`}
+                              >
+                                {cat.labelHi}
+                              </div>
+                            )}
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
+
+                  {/* Active Category Title */}
+                  <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5 pt-0.5">
+                    {getBookingCategoryIcon(activeBookingCategoryKey, 'w-3.5 h-3.5 text-amber-400')}
+                    <span>
+                      {getCategoryLabel(activeBookingCategoryKey, 'both', categories)} ({categoryEquipmentPlans.length})
+                    </span>
+                  </div>
+
+                  {/* Items Grid for Selected Category Only */}
+                  {categoryEquipmentPlans.length === 0 ? (
+                    <div className="p-5 rounded-xl bg-neutral-950 border border-neutral-800 text-center text-xs text-neutral-400">
+                      इस कैटेगरी में अभी कोई आइटम नहीं है।
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                      {categoryEquipmentPlans.map((plan) => {
+                        const qty = itemQuantities[plan.id] || 0;
+                        const itemImg =
+                          plan.imageUrl !== undefined
+                            ? (plan.imageUrl || undefined)
+                            : RATE_PLAN_IMAGES[plan.id];
+                        return (
+                          <div
+                            key={plan.id}
+                            className={`p-2.5 rounded-xl border transition-all flex flex-col justify-between gap-2 ${
+                              qty > 0
+                                ? 'bg-amber-500/10 border-amber-400/70'
+                                : 'bg-neutral-950 border-neutral-800'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-10 h-10 rounded-lg overflow-hidden border border-neutral-700 bg-neutral-900 shrink-0 flex items-center justify-center">
+                                  {itemImg ? (
+                                    <img
+                                      src={itemImg}
+                                      alt={plan.nameEn || plan.nameHi}
+                                      referrerPolicy="no-referrer"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    getBookingCategoryIcon(activeBookingCategoryKey, 'w-4 h-4 text-amber-400')
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-xs font-bold text-white truncate">
+                                    {plan.nameEn || plan.nameHi}
+                                  </div>
+                                  {plan.nameHi && plan.nameHi !== plan.nameEn && (
+                                    <div className="text-[11px] text-amber-300/90 truncate">
+                                      {plan.nameHi}
+                                    </div>
+                                  )}
+                                  <div className="text-[11px] font-mono text-amber-400 font-bold tabular-nums">
+                                    ₹{plan.price.toLocaleString('en-IN')} / {plan.unitLabel || 'pc'}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-medium text-neutral-400">Qty:</span>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => updateItemQty(plan.id, -1)}
+                                  className="w-7 h-7 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white flex items-center justify-center cursor-pointer"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </button>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={qty}
+                                  onChange={(e) => setExactItemQty(plan.id, parseInt(e.target.value, 10))}
+                                  className="w-12 text-center py-0.5 bg-neutral-900 border border-neutral-700 rounded-lg text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 tabular-nums"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateItemQty(plan.id, 1)}
+                                  className="w-7 h-7 rounded-lg bg-amber-400 hover:bg-amber-300 text-black flex items-center justify-center cursor-pointer font-bold"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Selected Items Multi-Category Cart Strip */}
+                  {selectedBookingItems.length > 0 && (
+                    <div className="p-2.5 rounded-xl bg-neutral-950 border border-emerald-700/40 flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-emerald-400 mr-1">
+                        Selected ({selectedBookingItems.length}):
+                      </span>
+                      {selectedBookingItems.map((it) => (
+                        <span
+                          key={it.id}
+                          className="px-2 py-0.5 rounded-md bg-neutral-900 border border-neutral-700 text-[11px] text-white font-mono flex items-center gap-1"
+                        >
+                          <span>{it.name} × {it.qty}</span>
+                          <button
+                            type="button"
+                            onClick={() => setExactItemQty(it.id, 0)}
+                            className="text-rose-400 hover:text-rose-300 cursor-pointer"
+                            aria-label={`Remove ${it.name}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              ) : (
+                !isCustomPhoto && (
+                  <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <span className="text-amber-200 font-semibold">
+                      Wedding / Party Custom Quote Selected (मालिक रेट तय करेंगे)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEventType('custom_items')}
+                      className="px-3 py-1.5 rounded-lg bg-amber-400 text-black font-bold text-xs cursor-pointer w-fit"
+                    >
+                      Select Category Items Instead
+                    </button>
+                  </div>
+                )
               )}
 
               {/* 03. Requirement Slip Photo (Optional) */}
@@ -1558,8 +1755,16 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
               </div>
             </div>
 
-            {/* Sticky Modal Footer with Total & Primary Submit */}
-            <div className="px-5 sm:px-6 py-3.5 bg-neutral-900 border-t border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+            {/* Sticky Modal Footer with Error Alert, Total & Primary Submit */}
+            <div className="px-5 sm:px-6 py-3.5 bg-neutral-900 border-t border-neutral-800 space-y-2.5 shrink-0">
+              {formError && (
+                <div className="px-3 py-2 rounded-xl bg-rose-950/80 border border-rose-600/70 text-rose-200 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="font-mono">
                 <span className="text-neutral-400 block text-[10px] uppercase font-sans font-bold">
                   {isOwnerQuotedEvent ? 'Rate' : 'Total Payable'}
@@ -1584,9 +1789,10 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                 <button
                   type="button"
                   onClick={closeBookingPopup}
-                  className="min-h-[42px] px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold cursor-pointer"
+                  className="min-h-[42px] px-4 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 border border-rose-600/60 text-rose-200 text-xs font-bold flex items-center gap-1 cursor-pointer"
                 >
-                  Cancel
+                  <X className="w-3.5 h-3.5" />
+                  <span>Cancel / बंद करें</span>
                 </button>
 
                 <button
@@ -1610,6 +1816,7 @@ export const CustomerBooking: React.FC<CustomerBookingProps> = ({
                     </>
                   )}
                 </button>
+              </div>
               </div>
             </div>
           </form>

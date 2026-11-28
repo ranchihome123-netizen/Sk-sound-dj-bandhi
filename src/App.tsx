@@ -32,13 +32,8 @@ import {
 import { Navbar } from './components/Navbar';
 import { PricingPackages } from './components/PricingPackages';
 import { CustomerBooking } from './components/CustomerBooking';
-import { OwnerBookingManager } from './components/OwnerBookingManager';
-import { OwnerIncomeSection } from './components/OwnerIncomeSection';
-import { OwnerUpcomingBookings } from './components/OwnerUpcomingBookings';
-import { OwnerDiscountManager } from './components/OwnerDiscountManager';
-import { OwnerRateManager } from './components/OwnerRateManager';
-import { StaffManagement } from './components/StaffManagement';
 import { LocationContact } from './components/LocationContact';
+import { OwnerPortalWorkspace, OwnerSectionId } from './components/OwnerPortalWorkspace';
 import { Footer } from './components/Footer';
 import { UPIScannerModal } from './components/UPIScannerModal';
 import { BookingSlipModal } from './components/BookingSlipModal';
@@ -175,8 +170,9 @@ export default function App() {
   const [selectedSlipBooking, setSelectedSlipBooking] = useState<Booking | null>(null);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
 
-  // Customer Portal workspace tabs + Big Booking Popup state
+  // Customer Portal & Owner Portal workspace state + Big Booking Popup state
   const [customerTab, setCustomerTab] = useState<CustomerPortalTab>('overview');
+  const [ownerSection, setOwnerSection] = useState<OwnerSectionId | null>(null);
   const [bookingPopupOpen, setBookingPopupOpen] = useState(false);
   const [preselectedPlan, setPreselectedPlan] = useState<DJRatePlan | null>(null);
   const [preselectedCouponCode, setPreselectedCouponCode] = useState<string>('');
@@ -192,6 +188,7 @@ export default function App() {
     bookingPopupOpen,
     editingBooking,
     customerTab,
+    ownerSection,
     activeSection
   });
 
@@ -202,16 +199,50 @@ export default function App() {
     bookingPopupOpen,
     editingBooking,
     customerTab,
+    ownerSection,
     activeSection
   };
+
+  const armHistoryGuard = () => {
+    if (!window.history.state?.skAppGuard) {
+      window.history.pushState({ skAppGuard: true }, '');
+    }
+  };
+
+  // Push a fresh user-gesture history guard whenever interactive modals/views open
+  useEffect(() => {
+    if (!authSession) return;
+    if (
+      upiModalOpen ||
+      bookingPopupOpen ||
+      editingBooking ||
+      selectedSlipBooking ||
+      customerTab !== 'overview' ||
+      ownerSection !== null
+    ) {
+      armHistoryGuard();
+    }
+  }, [
+    authSession,
+    upiModalOpen,
+    bookingPopupOpen,
+    editingBooking,
+    selectedSlipBooking,
+    customerTab,
+    ownerSection
+  ]);
 
   // Global Back Button Guard (prevents single Back press from closing entire app)
   useEffect(() => {
     if (!authSession) return;
 
-    if (!window.history.state?.skAppGuard) {
-      window.history.pushState({ skAppGuard: true }, '');
-    }
+    armHistoryGuard();
+
+    const handleUserGesture = () => {
+      if (!backPressedOnceRef.current) {
+        armHistoryGuard();
+      }
+    };
 
     const handlePopState = () => {
       const s = backStateRef.current;
@@ -239,7 +270,7 @@ export default function App() {
         return;
       }
 
-      // 2. Ask child components (product zoom, owner edit/category modals) to close any open popup
+      // 2. Ask child components (product zoom, date calendar, customer/owner modals) to close any open popup
       const closeChildEvt = new CustomEvent('sk-close-child-modal', { cancelable: true });
       const notCancelled = window.dispatchEvent(closeChildEvt);
       if (!notCancelled) {
@@ -247,7 +278,7 @@ export default function App() {
         return;
       }
 
-      // 3. Return from sub-tabs back to Home / Overview
+      // 3. Return from sub-tabs back to Home / Owner Menu
       if (s.authSession.role === 'customer' && s.customerTab !== 'overview') {
         setCustomerTab('overview');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -255,8 +286,8 @@ export default function App() {
         return;
       }
 
-      if (s.authSession.role === 'owner' && s.activeSection !== 'home') {
-        setActiveSection('home');
+      if (s.authSession.role === 'owner' && s.ownerSection !== null) {
+        setOwnerSection(null);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         window.history.pushState({ skAppGuard: true }, '');
         return;
@@ -272,15 +303,17 @@ export default function App() {
         exitToastTimerRef.current = window.setTimeout(() => {
           backPressedOnceRef.current = false;
           setExitToast(false);
-          if (!window.history.state?.skAppGuard) {
-            window.history.pushState({ skAppGuard: true }, '');
-          }
+          armHistoryGuard();
         }, 2500);
       }
     };
 
+    window.addEventListener('pointerdown', handleUserGesture, { passive: true });
+    window.addEventListener('keydown', handleUserGesture, { passive: true });
     window.addEventListener('popstate', handlePopState);
     return () => {
+      window.removeEventListener('pointerdown', handleUserGesture);
+      window.removeEventListener('keydown', handleUserGesture);
       window.removeEventListener('popstate', handlePopState);
       if (exitToastTimerRef.current) {
         window.clearTimeout(exitToastTimerRef.current);
@@ -353,6 +386,7 @@ export default function App() {
     setPreselectedPlan(null);
     setPreselectedCouponCode('');
     setCustomerTab('overview');
+    setOwnerSection(null);
     setAuthSession(null);
   };
 
@@ -938,6 +972,25 @@ export default function App() {
       ? 'location'
       : 'home';
 
+  const ownerActiveNavSection =
+    ownerSection === null
+      ? 'home'
+      : ownerSection === 'income'
+      ? 'owner-income'
+      : ownerSection === 'upcoming'
+      ? 'upcoming-bookings'
+      : ownerSection === 'discounts'
+      ? 'owner-discounts'
+      : ownerSection === 'rates'
+      ? 'packages'
+      : ownerSection === 'bookings'
+      ? 'booking'
+      : ownerSection === 'staff'
+      ? 'staff'
+      : ownerSection === 'location'
+      ? 'location'
+      : 'home';
+
   const handleSetActiveSection = (sec: string) => {
     setActiveSection(sec);
     if (authSession.role === 'customer') {
@@ -945,6 +998,16 @@ export default function App() {
       else if (sec === 'packages') setCustomerTab('rates');
       else if (sec === 'booking') setCustomerTab('bookings');
       else if (sec === 'location') setCustomerTab('location');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (authSession.role === 'owner') {
+      if (sec === 'home') setOwnerSection(null);
+      else if (sec === 'owner-income') setOwnerSection('income');
+      else if (sec === 'upcoming-bookings') setOwnerSection('upcoming');
+      else if (sec === 'owner-discounts') setOwnerSection('discounts');
+      else if (sec === 'packages') setOwnerSection('rates');
+      else if (sec === 'booking') setOwnerSection('bookings');
+      else if (sec === 'staff') setOwnerSection('staff');
+      else if (sec === 'location') setOwnerSection('location');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -960,7 +1023,7 @@ export default function App() {
         onOpenAuth={() => {}}
         authSession={authSession}
         onLogout={handleLogout}
-        activeSection={authSession.role === 'customer' ? customerActiveNavSection : activeSection}
+        activeSection={authSession.role === 'customer' ? customerActiveNavSection : ownerActiveNavSection}
         setActiveSection={handleSetActiveSection}
         lang={lang}
         setLang={setLang}
@@ -1021,6 +1084,7 @@ export default function App() {
               currentUserMobile={loggedInCustomer.mobile}
               rewardPercent={activeRewardPercent}
               ratePlans={ratePlans}
+              categories={categories}
               discountCodes={discountCodes}
               editingBooking={editingBooking}
               isModalOpen={bookingPopupOpen}
@@ -1055,77 +1119,44 @@ export default function App() {
             )}
           </div>
         ) : (
-          /* OWNER PORTAL */
-          <div>
-            {/* 0. Owner Private Income Report (Today, Monthly, Half-Yearly, Annual - Only Owner) */}
-            <OwnerIncomeSection bookings={bookings} />
-
-            {/* 0.5 Upcoming Bookings (Next 7 Days) with Quick Customer Contact */}
-            <OwnerUpcomingBookings
-              bookings={bookings}
-              onViewSlip={(b) => setSelectedSlipBooking(b)}
-            />
-
-            {/* 0.75 Owner Discount Code & Offer Broadcast Manager (Owner Only) */}
-            <OwnerDiscountManager
-              discountCodes={discountCodes}
-              rewardPercent={activeRewardPercent}
-              activeOfferNote={business.activeOfferNote}
-              customerList={customerList}
-              offerBroadcasts={offerBroadcasts}
-              businessName={business.businessNameEn}
-              ownerPhone={business.phone}
-              onAddDiscountCode={handleAddDiscountCode}
-              onToggleDiscountCode={handleToggleDiscountCode}
-              onDeleteDiscountCode={handleDeleteDiscountCode}
-              onSaveOfferPercent={handleSaveOfferPercent}
-              onBroadcastOfferToAll={handleBroadcastOfferToAll}
-            />
-
-            {/* 1. Rate List & Category Management for Owner Only (Synced live to customers) */}
-            <OwnerRateManager
-              ratePlans={ratePlans}
-              categories={categories}
-              onUpdateRatePlans={handleUpdateRatePlans}
-              onUpdateCategories={handleUpdateCategories}
-            />
-
-            {/* 2. Master Booking Ledger & UTR Verification */}
-            <OwnerBookingManager
-              business={business}
-              rewardPercent={activeRewardPercent}
-              onUpdateBusinessName={handleUpdateBusinessName}
-              bookings={bookings}
-              onAddBookingToList={handleOwnerAddBookingToList}
-              onDeleteBookingFromList={handleOwnerDeleteBookingFromList}
-              onUpdateBookingStatus={handleOwnerUpdateStatus}
-              onUpdateBookingPrice={handleOwnerUpdateBookingPrice}
-              onApproveUtrPayment={handleOwnerApproveUtrPayment}
-              onMarkEditReviewed={handleMarkEditReviewed}
-              lastWhatsappDispatch={lastOwnerWhatsappNotice}
-              onDismissWhatsappDispatch={() => setLastOwnerWhatsappNotice(null)}
-              onViewSlip={(b) => setSelectedSlipBooking(b)}
-              onOpenUPIForBooking={handleOpenUPIForBooking}
-              lang={lang}
-            />
-
-            {/* 3. Staff Management (Owner Only) */}
-            <StaffManagement
-              staffList={staffList}
-              onAddStaff={handleAddStaff}
-              onDeleteStaff={handleDeleteStaff}
-              onRecordDuty={handleRecordDuty}
-              onRecordPayment={handleRecordPayment}
-              lang={lang}
-            />
-
-            {/* 4. Location & Contact (Bandhi, Khorimahuwa, Rajdhanwar) */}
-            <LocationContact
-              business={business}
-              onOpenUPI={() => handleOpenUPI(2000, 'SK Sound DJ Bandhi Payment')}
-              lang={lang}
-            />
-          </div>
+          /* OWNER PORTAL (Tap-to-Open Hub Workspace) */
+          <OwnerPortalWorkspace
+            activeSection={ownerSection}
+            onSelectSection={setOwnerSection}
+            business={business}
+            activeRewardPercent={activeRewardPercent}
+            bookings={bookings}
+            ratePlans={ratePlans}
+            categories={categories}
+            discountCodes={discountCodes}
+            customerList={customerList}
+            offerBroadcasts={offerBroadcasts}
+            staffList={staffList}
+            lastOwnerWhatsappNotice={lastOwnerWhatsappNotice}
+            lang={lang}
+            onUpdateBusinessName={handleUpdateBusinessName}
+            onUpdateRatePlans={handleUpdateRatePlans}
+            onUpdateCategories={handleUpdateCategories}
+            onAddBookingToList={handleOwnerAddBookingToList}
+            onDeleteBookingFromList={handleOwnerDeleteBookingFromList}
+            onUpdateBookingStatus={handleOwnerUpdateStatus}
+            onUpdateBookingPrice={handleOwnerUpdateBookingPrice}
+            onApproveUtrPayment={handleOwnerApproveUtrPayment}
+            onMarkEditReviewed={handleMarkEditReviewed}
+            onDismissWhatsappDispatch={() => setLastOwnerWhatsappNotice(null)}
+            onViewSlip={(b) => setSelectedSlipBooking(b)}
+            onOpenUPIForBooking={handleOpenUPIForBooking}
+            onOpenUPI={handleOpenUPI}
+            onAddDiscountCode={handleAddDiscountCode}
+            onToggleDiscountCode={handleToggleDiscountCode}
+            onDeleteDiscountCode={handleDeleteDiscountCode}
+            onSaveOfferPercent={handleSaveOfferPercent}
+            onBroadcastOfferToAll={handleBroadcastOfferToAll}
+            onAddStaff={handleAddStaff}
+            onDeleteStaff={handleDeleteStaff}
+            onRecordDuty={handleRecordDuty}
+            onRecordPayment={handleRecordPayment}
+          />
         )}
       </main>
 
